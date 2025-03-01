@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Derivative Checkers Game with Feedback</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Derivative Checkers Game</h1>
+  <!-- Status line (for turn and win/lose messages) -->
+  <div id="status">Waiting for opponent...</div>
+  <!-- Score line (for scores) -->
+  <div id="score"></div>
+  <div id="timers">
+    <div>Red Timer: <span id="timerRed">180</span> s</div>
+    <div>Black Timer: <span id="timerBlack">180</span> s</div>
+  </div>
+  <canvas id="gameCanvas" width="600" height="600"></canvas>
+  
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="client.js"></script>
+</body>
+</html>

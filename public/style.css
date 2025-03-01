@@ -1,0 +1,16 @@
+body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  margin: 0;
+  padding: 20px;
+}
+
+#gameCanvas {
+  border: 1px solid #000;
+  margin-top: 20px;
+}
+
+#timers {
+  margin-top: 10px;
+  font-size: 20px;
+}

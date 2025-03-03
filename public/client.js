@@ -130,12 +130,11 @@ function drawBoard() {
   }
 }
 
-// Update move history display.
 function updateMoveHistory(moves) {
   moveList.innerHTML = "";
   moves.forEach((move, index) => {
     let li = document.createElement("li");
-    li.textContent = `${index+1}. ${move.timestamp} - ${move.player.toUpperCase()} from (${move.from.row},${move.from.col}) to (${move.to.row},${move.to.col})` +
+    li.textContent = `${move.timestamp}s - ${move.player.toUpperCase()} moved from (${move.from.row},${move.from.col}) to (${move.to.row},${move.to.col})` +
                      (move.moveType && move.moveType !== "move" ? ` [${move.moveType.toUpperCase()}]` : "");
     li.addEventListener('click', () => {
       if (!previewMode) return;
@@ -145,6 +144,7 @@ function updateMoveHistory(moves) {
     moveList.appendChild(li);
   });
 }
+
 
 // Handle canvas clicks for move selection.
 canvas.addEventListener('click', (e) => {

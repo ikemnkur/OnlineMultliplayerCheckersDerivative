@@ -143,6 +143,7 @@ io.on('connection', (socket) => {
     socket.join(roomId);
     waitingPlayer.join(roomId);
 
+    // When pairing players and creating a new game:
     games[roomId] = {
       board: createInitialBoard(),
       players: { red: waitingPlayer.id, black: socket.id },
@@ -150,12 +151,13 @@ io.on('connection', (socket) => {
         red: waitingPlayer.nickname || 'Red',
         black: socket.nickname || 'Black'
       },
-      turn: 'red',
+      turn: 'red', // red starts
       timerRed: 180,
       timerBlack: 180,
       capturedForRed: 0,
       capturedForBlack: 0,
-      moveHistory: [],  // <-- Initialize move history array
+      moveHistory: [],  // Initialize move history array
+      startTime: Date.now(), // <-- Record game start time
       interval: null
     };
 
@@ -214,13 +216,13 @@ io.on('connection', (socket) => {
     game.board[to.row][to.col] = piece;
     game.board[from.row][from.col] = null;
 
-    // Record the move in moveHistory.
+    // Record the move with relative time in seconds:
     game.moveHistory.push({
       player: playerColor,
       from,
       to,
-      moveType: null, // We'll set this below.
-      timestamp: new Date().toISOString()
+      moveType: null, // We'll update this below if necessary.
+      timestamp: Math.floor((Date.now() - game.startTime) / 1000) // seconds since game start
     });
 
     // Check for capture.

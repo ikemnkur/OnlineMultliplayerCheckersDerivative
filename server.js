@@ -2,7 +2,7 @@ const express = require('express');
 const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
-const fs = require('fs'); // Require the filesystem module
+const fs = require('fs'); // filesystem module
 
 const PORT = process.env.PORT || 3000;
 app.use(express.static(__dirname + '/public'));
@@ -79,7 +79,6 @@ function isValidMove(game, from, to, color) {
 
   if (dr === 0 && Math.abs(dc) === 1) return true;
   if (dr === forwardDir && dc === 0) return true;
-
   if (Math.abs(dr) === 2 && Math.abs(dc) === 2 && dr === forwardDir * 2) {
     const midRow = (from.row + to.row) / 2;
     const midCol = (from.col + to.col) / 2;
@@ -143,60 +142,76 @@ io.on('connection', (socket) => {
     socket.join(roomId);
     waitingPlayer.join(roomId);
 
-    // When pairing players, store the game start time:
-games[roomId] = {
-  board: createInitialBoard(),
-  players: { red: waitingPlayer.id, black: socket.id },
-  nicknames: {
-    red: waitingPlayer.nickname || 'Red',
-    black: socket.nickname || 'Black'
-  },
-  turn: 'red', // red starts
-  timerRed: 180,
-  timerBlack: 180,
-  capturedForRed: 0,
-  capturedForBlack: 0,
-  moveHistory: [],  // Initialize move history array
-  startTime: Date.now(),  // Record game start time
-  interval: null
-};
+    games[roomId] = {
+      board: createInitialBoard(),
+      players: { red: waitingPlayer.id, black: socket.id },
+      nicknames: {
+        red: waitingPlayer.nickname || 'Red',
+        black: socket.nickname || 'Black'
+      },
+      turn: 'red', // red starts
+      timerRed: 180,
+      timerBlack: 180,
+      capturedForRed: 0,
+      capturedForBlack: 0,
+      moveHistory: [],
+      startTime: Date.now(),
+      interval: null,
+      ready: { red: false, black: false } // readiness flags
+    };
 
-
-    io.to(roomId).emit('gameStart', {
-      color: 'red',
+    // Instead of starting immediately, emit a waitingForReady event.
+    io.to(roomId).emit('waitingForReady', {
       yourNickname: games[roomId].nicknames.red,
-      opponentNickname: games[roomId].nicknames.black
+      opponentNickname: games[roomId].nicknames.black,
+      color: 'red'
     });
-    io.to(games[roomId].players.black).emit('gameStart', {
-      color: 'black',
+    io.to(games[roomId].players.black).emit('waitingForReady', {
       yourNickname: games[roomId].nicknames.black,
-      opponentNickname: games[roomId].nicknames.red
+      opponentNickname: games[roomId].nicknames.red,
+      color: 'black'
     });
 
-    // io.to(roomId).emit('update', {
-    //   board: games[roomId].board,
-    //   turn: games[roomId].turn,
-    //   scores: computeScores(games[roomId]),
-    //   moveType: null
-    // });
-
-    // In the game creation block (after pairing players), update the first update emission:
-    io.to(roomId).emit('update', {
-      board: games[roomId].board,
-      turn: games[roomId].turn,
-      scores: computeScores(games[roomId]),
-      moveType: null,
-      moveHistory: games[roomId].moveHistory   // <-- added
-    });
-
-    io.to(roomId).emit('timer', { timerRed: 180, timerBlack: 180 });
-
-    startTimer(roomId);
     waitingPlayer = null;
   } else {
     waitingPlayer = socket;
     socket.emit('status', { message: 'Waiting for an opponent...' });
   }
+
+  // Listen for playerReady events.
+  socket.on('playerReady', () => {
+    const rooms = [...socket.rooms].filter(r => r !== socket.id);
+    if (!rooms.length) return;
+    const roomId = rooms[0];
+    const game = games[roomId];
+    if (!game) return;
+    const playerColor = game.players.red === socket.id ? 'red' : 'black';
+    game.ready[playerColor] = true;
+    console.log(`Player ${playerColor} is ready in room ${roomId}`);
+
+    // Start game when both are ready.
+    if (game.ready.red && game.ready.black) {
+      io.to(roomId).emit('gameStart', {
+        yourNickname: game.nicknames.red,
+        opponentNickname: game.nicknames.black,
+        color: 'red'
+      });
+      io.to(game.players.black).emit('gameStart', {
+        yourNickname: game.nicknames.black,
+        opponentNickname: game.nicknames.red,
+        color: 'black'
+      });
+      io.to(roomId).emit('update', {
+        board: game.board,
+        turn: game.turn,
+        scores: computeScores(game),
+        moveType: null,
+        moveHistory: game.moveHistory
+      });
+      io.to(roomId).emit('timer', { timerRed: 180, timerBlack: 180 });
+      startTimer(roomId);
+    }
+  });
 
   socket.on('makeMove', (data) => {
     // data: { from: { row, col }, to: { row, col } }
@@ -205,30 +220,29 @@ games[roomId] = {
     const roomId = rooms[0];
     const game = games[roomId];
     if (!game) return;
-    
+
     const playerColor = game.players.red === socket.id ? 'red' : 'black';
     if (game.turn !== playerColor) return;
-    
+
     const { from, to } = data;
     if (!isValidMove(game, from, to, playerColor)) return;
-    
+
     let moveType = "move";
     const piece = game.board[from.row][from.col];
     game.board[to.row][to.col] = piece;
     game.board[from.row][from.col] = null;
-    
-    // Record move with relative timestamp and current timer values.
+
+    // Record the move with relative timestamp and timer values.
     game.moveHistory.push({
       player: playerColor,
       from,
       to,
-      moveType: null, // Will be set below.
+      moveType: null, // will update below
       timestamp: Math.floor((Date.now() - game.startTime) / 1000),
       timerRed: game.timerRed,
       timerBlack: game.timerBlack
     });
-    
-    // Check for capture.
+
     if (Math.abs(to.row - from.row) === 2 && Math.abs(to.col - from.col) === 2) {
       moveType = "capture";
       const midRow = (from.row + to.row) / 2;
@@ -243,11 +257,10 @@ games[roomId] = {
         }
       }
     }
-    
-    // Update the last move with its type.
+
     game.moveHistory[game.moveHistory.length - 1].moveType = moveType;
-    
-    // Win condition: a piece reaches the enemy side.
+
+    // Win condition: piece reaches enemy side.
     if ((playerColor === 'red' && to.row === 0) ||
         (playerColor === 'black' && to.row === 7)) {
       moveType = "win";
@@ -265,11 +278,10 @@ games[roomId] = {
       clearInterval(game.interval);
       return;
     }
-    
-    // Switch turn.
+
     const opponentColor = playerColor === 'red' ? 'black' : 'red';
     game.turn = opponentColor;
-    
+
     const scores = computeScores(game);
     io.to(roomId).emit('update', {
       board: game.board,

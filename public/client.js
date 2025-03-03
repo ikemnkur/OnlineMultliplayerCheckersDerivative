@@ -129,8 +129,8 @@ function updatePreviewBoard() {
   // Display the current move's timestamp and timers from the move history.
   let currentMove = previewHistory[previewIndex] || {};
   let currentTime = currentMove.timestamp || 0;
-  timerRedSpan.innerText = currentMove.timerRed !== undefined ? currentMove.timerRed : '';
-  timerBlackSpan.innerText = currentMove.timerBlack !== undefined ? currentMove.timerBlack : '';
+  timerRedSpan.innerText = (currentMove.timerRed !== undefined) ? currentMove.timerRed : '';
+  timerBlackSpan.innerText = (currentMove.timerBlack !== undefined) ? currentMove.timerBlack : '';
   scoreDiv.innerText = `Score: You ${myScore} - Opponent ${oppScore}. Move Time: ${currentTime}s`;
 }
 
@@ -219,26 +219,44 @@ canvas.addEventListener('click', (e) => {
   }
 });
 
+// Listen for waitingForReady event and prompt the user.
+socket.on('waitingForReady', (data) => {
+  const ready = confirm(
+    "A new game is available!\nYou are " +
+      data.color.toUpperCase() +
+      " (" +
+      data.yourNickname +
+      ").\nYour opponent is " +
+      data.opponentNickname +
+      ".\n\nAre you ready to start the game?"
+  );
+  if (ready) {
+    socket.emit('playerReady');
+  } else {
+    alert("Waiting for you to be ready. Refresh the page to try again.");
+  }
+});
+
+// When gameStart is received, initialize game state.
 socket.on('gameStart', (data) => {
   myColor = data.color;
   myNickname = data.yourNickname;
   opponentNickname = data.opponentNickname;
-  statusDiv.innerText = `You are ${myNickname} (${myColor}).`;
+  statusDiv.innerText = `Game started! You are ${myNickname} (${myColor}).`;
   startSound.play();
 });
 
+// On update, refresh board, move history, score, and status.
 socket.on('update', (data) => {
   if (!previewMode) {
     board = data.board;
   }
   myTurn = data.turn === myColor;
   
-  // Save initial board state on first update.
   if (!initialBoard && data.board) {
     initialBoard = cloneBoard(data.board);
   }
   
-  // If not in preview mode, update previewHistory from server update.
   if (!previewMode) {
     previewHistory = data.moveHistory || [];
     previewIndex = previewHistory.length - 1;
@@ -249,7 +267,6 @@ socket.on('update', (data) => {
   }
   updateMoveHistory(previewHistory);
   
-  // Update score and status.
   let scores = data.scores;
   let myScore, oppScore;
   if (myColor === 'red') {
@@ -328,25 +345,23 @@ let mode = "pause";
 let autoPlayInterval = null;
 
 playButton.addEventListener('click', () => {
-  if(mode === "play"){
+  if (mode === "play") {
     mode = "pause";
     clearInterval(autoPlayInterval);
   } else {
     mode = "play";
     autoPlayInterval = setInterval(() => {
       if (!previewMode || previewHistory.length === 0) return;
-      // Stop if we've reached the final move.
       if (previewIndex >= previewHistory.length - 1) {
-         clearInterval(autoPlayInterval);
-         mode = "pause";
-         return;
+        clearInterval(autoPlayInterval);
+        mode = "pause";
+        return;
       }
       previewIndex = Math.min(previewHistory.length - 1, previewIndex + 1);
       updatePreviewBoard();
     }, 1000);
   }
 });
-
 
 reviewButton.addEventListener('click', () => {
   if (previewHistory.length === 0) return;
@@ -368,9 +383,6 @@ previewButton.addEventListener('click', () => {
       previewIndex = previewHistory.length - 1;
       if (!initialBoard) {
         alert("No initial board state available from current game; using default initial board.");
-        // Optionally, call a function to create a default board.
-        // For example, if you have createInitialBoard() client-side, call that.
-        // Here we'll assume createInitialBoard() exists.
         initialBoard = createInitialBoard();
       }
       updatePreviewBoard();
@@ -399,7 +411,7 @@ copyButton.addEventListener('click', () => {
     });
 });
 
-// Client-side version of createInitialBoard for preview mode (replicate your derivative board setup)
+// Client-side createInitialBoard for preview mode.
 function createInitialBoard() {
   let board = Array(8).fill().map(() => Array(8).fill(null));
   // Black pieces (top side)

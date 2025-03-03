@@ -15,6 +15,7 @@ const timerBlackSpan = document.getElementById('timerBlack');
 const moveList = document.getElementById('moveList');
 
 const prevButton = document.getElementById('prevButton');
+const playButton = document.getElementById('playButton');
 const nextButton = document.getElementById('nextButton');
 const reviewButton = document.getElementById('reviewButton');
 const previewButton = document.getElementById('previewButton');
@@ -322,6 +323,30 @@ nextButton.addEventListener('click', () => {
   previewIndex = Math.min(previewHistory.length - 1, previewIndex + 1);
   updatePreviewBoard();
 });
+
+let mode = "pause";
+let autoPlayInterval = null;
+
+playButton.addEventListener('click', () => {
+  if(mode === "play"){
+    mode = "pause";
+    clearInterval(autoPlayInterval);
+  } else {
+    mode = "play";
+    autoPlayInterval = setInterval(() => {
+      if (!previewMode || previewHistory.length === 0) return;
+      // Stop if we've reached the final move.
+      if (previewIndex >= previewHistory.length - 1) {
+         clearInterval(autoPlayInterval);
+         mode = "pause";
+         return;
+      }
+      previewIndex = Math.min(previewHistory.length - 1, previewIndex + 1);
+      updatePreviewBoard();
+    }, 1000);
+  }
+});
+
 
 reviewButton.addEventListener('click', () => {
   if (previewHistory.length === 0) return;

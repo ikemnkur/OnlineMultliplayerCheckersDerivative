@@ -12,6 +12,7 @@ const statusDiv = document.getElementById('status');
 const scoreDiv = document.getElementById('score');
 const timerRedSpan = document.getElementById('timerRed');
 const timerBlackSpan = document.getElementById('timerBlack');
+const moveList = document.getElementById('moveList'); // New move history list element
 
 const socket = io();
 
@@ -27,14 +28,14 @@ let myNickname = nickname;
 let opponentNickname = "Opponent";
 let selectedPiece = null; // stored in server (unrotated) coordinates
 
-// Preload sound effects (assumes you have these files in public/sounds/)
-const selectSound = new Audio('sounds/select.wav');
-const moveSound = new Audio('sounds/PieceMove.wav');
-const captureSound = new Audio('sounds/capture.wav');
-const warningSound = new Audio('sounds/hurryup.wav');
-const winSound = new Audio('sounds/WinGame.wav');
-const loseSound = new Audio('sounds/LoseGame.wav');
-const startSound = new Audio('sounds/GameStart.mp3');
+// Preload sound effects (ensure these files exist in public/sounds/)
+const selectSound = new Audio('sounds/select.mp3');
+const moveSound = new Audio('sounds/move.mp3');
+const captureSound = new Audio('sounds/capture.mp3');
+const warningSound = new Audio('sounds/warning.mp3');
+const winSound = new Audio('sounds/win.mp3');
+const loseSound = new Audio('sounds/lose.mp3');
+const startSound = new Audio('sounds/start.mp3');
 
 let warningPlayed = false;  // Play only once per turn
 let lastTurn;               // To detect turn change
@@ -81,6 +82,21 @@ function drawBoard() {
       }
     }
   }
+}
+
+// Update the move history display in the moveList div.
+function updateMoveHistory(moves) {
+  // Clear the list.
+  moveList.innerHTML = "";
+  // For each move in the array, create a list item.
+  moves.forEach((move, index) => {
+    let li = document.createElement("li");
+    li.textContent = `${index+1}. ${move.timestamp} - ${move.player.toUpperCase()} moved from (${move.from.row},${move.from.col}) to (${move.to.row},${move.to.col})`;
+    if (move.moveType && move.moveType !== "move") {
+      li.textContent += ` [${move.moveType.toUpperCase()}]`;
+    }
+    moveList.appendChild(li);
+  });
 }
 
 // Handle clicks for move selection.
@@ -157,6 +173,11 @@ socket.on('update', (data) => {
       moveSound.play();
     }
   }
+  
+  // Update move history display.
+  if (data.moveHistory) {
+    updateMoveHistory(data.moveHistory);
+  }
 });
 
 socket.on('timer', (data) => {
@@ -188,5 +209,3 @@ socket.on('gameOver', (data) => {
   }
   myTurn = false;
 });
-
-drawBoard()

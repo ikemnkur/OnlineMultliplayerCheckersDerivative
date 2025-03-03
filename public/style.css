@@ -14,3 +14,29 @@ body {
   margin-top: 10px;
   font-size: 20px;
 }
+
+/* Optionally style the status and score lines differently */
+#status {
+  font-size: 24px;
+  margin-bottom: 5px;
+}
+
+#score {
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+
+/* New styling for the move history box */
+#moveHistory {
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-top: 20px;
+  max-height: 200px;
+  overflow-y: auto;
+  text-align: left;
+}
+
+#moveHistory h3 {
+  margin-top: 0;
+}

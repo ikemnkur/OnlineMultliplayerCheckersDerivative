@@ -54,7 +54,7 @@ const startSound = new Audio('sounds/start.mp3');
 let warningPlayed = false;  // play only once per turn
 let lastTurn;               // to detect turn change
 
-// If the board is empty on load (e.g. page refresh) draw an empty grid.
+// If the board is empty on load, draw an empty grid.
 window.onload = function() {
   if (!board || board.length === 0) {
     board = Array(gridSize).fill().map(() => Array(gridSize).fill(null));
@@ -62,9 +62,12 @@ window.onload = function() {
   }
 };
 
+// Utility: Deep clone a board.
+function cloneBoard(board) {
+  return JSON.parse(JSON.stringify(board));
+}
+
 // Compute local scores from a board state.
-// For red: sum((8 - row)^2) for each red piece.
-// For black: sum((row + 1)^2) for each black piece.
 function computeScoresLocal(simBoard) {
   let scoreRed = 0, scoreBlack = 0;
   for (let r = 0; r < gridSize; r++) {
@@ -80,11 +83,6 @@ function computeScoresLocal(simBoard) {
     }
   }
   return { scoreRed, scoreBlack };
-}
-
-// Deep clone a board.
-function cloneBoard(board) {
-  return JSON.parse(JSON.stringify(board));
 }
 
 // Simulate board state at a given move index.
@@ -108,7 +106,7 @@ function simulateBoardAtMove(index, history, baseBoard) {
   return simBoard;
 }
 
-// Update the preview board state and update score/time display.
+// Update the preview board state and update score/time/timer display.
 function updatePreviewBoard() {
   if (!previewMode || !initialBoard) return;
   board = simulateBoardAtMove(previewIndex, previewHistory, initialBoard);
@@ -127,8 +125,11 @@ function updatePreviewBoard() {
     myScore = simScores.scoreBlack;
     oppScore = simScores.scoreRed;
   }
-  // Also display the time of the current move.
-  let currentTime = previewHistory[previewIndex] ? previewHistory[previewIndex].timestamp : 0;
+  // Display the current move's timestamp and timers from the move history.
+  let currentMove = previewHistory[previewIndex] || {};
+  let currentTime = currentMove.timestamp || 0;
+  timerRedSpan.innerText = currentMove.timerRed !== undefined ? currentMove.timerRed : '';
+  timerBlackSpan.innerText = currentMove.timerBlack !== undefined ? currentMove.timerBlack : '';
   scoreDiv.innerText = `Score: You ${myScore} - Opponent ${oppScore}. Move Time: ${currentTime}s`;
 }
 
@@ -171,7 +172,7 @@ function drawBoard() {
   }
 }
 
-// Update move history display (using an unordered list).
+// Update move history display (as an unordered list).
 function updateMoveHistory(moves) {
   moveList.innerHTML = "";
   moves.forEach((move, index) => {
@@ -257,12 +258,11 @@ socket.on('update', (data) => {
     myScore = scores.scoreBlack;
     oppScore = scores.scoreRed;
   }
-  // In preview mode, use local score computation.
+  
   if (previewMode && initialBoard) {
     let simScores = computeScoresLocal(simulateBoardAtMove(previewIndex, previewHistory, initialBoard));
     myScore = (myColor === 'red') ? simScores.scoreRed : simScores.scoreBlack;
     oppScore = (myColor === 'red') ? simScores.scoreBlack : simScores.scoreRed;
-    // Also display the time of the current move.
     let currentTime = previewHistory[previewIndex] ? previewHistory[previewIndex].timestamp : 0;
     scoreDiv.innerText = `Score: You ${myScore} - Opponent ${oppScore}. Move Time: ${currentTime}s`;
   } else {
@@ -343,12 +343,14 @@ previewButton.addEventListener('click', () => {
       previewIndex = previewHistory.length - 1;
       if (!initialBoard) {
         alert("No initial board state available from current game; using default initial board.");
-        // Create a default initial board based on our derivative game.
-        initialBoard = Array(8).fill().map(() => Array(8).fill(null));
-        // (You might want to call your createInitialBoard() function here.)
+        // Optionally, call a function to create a default board.
+        // For example, if you have createInitialBoard() client-side, call that.
+        // Here we'll assume createInitialBoard() exists.
+        initialBoard = createInitialBoard();
       }
       updatePreviewBoard();
       statusDiv.innerText = `Preview Mode: Loaded external game.`;
+      updateMoveHistory(previewHistory);
     } else {
       alert("Invalid move history format.");
     }
@@ -371,3 +373,29 @@ copyButton.addEventListener('click', () => {
       alert("Failed to copy: " + err);
     });
 });
+
+// Client-side version of createInitialBoard for preview mode (replicate your derivative board setup)
+function createInitialBoard() {
+  let board = Array(8).fill().map(() => Array(8).fill(null));
+  // Black pieces (top side)
+  for (let c = 1; c <= 6; c++) {
+    board[0][c] = { color: 'black', king: false };
+  }
+  for (let c = 2; c <= 5; c++) {
+    board[1][c] = { color: 'black', king: false };
+  }
+  for (let c = 3; c <= 4; c++) {
+    board[2][c] = { color: 'black', king: false };
+  }
+  // Red pieces (bottom side)
+  for (let c = 1; c <= 6; c++) {
+    board[7][c] = { color: 'red', king: false };
+  }
+  for (let c = 2; c <= 5; c++) {
+    board[6][c] = { color: 'red', king: false };
+  }
+  for (let c = 3; c <= 4; c++) {
+    board[5][c] = { color: 'red', king: false };
+  }
+  return board;
+}

@@ -143,23 +143,24 @@ io.on('connection', (socket) => {
     socket.join(roomId);
     waitingPlayer.join(roomId);
 
-    // When pairing players and creating a new game:
-    games[roomId] = {
-      board: createInitialBoard(),
-      players: { red: waitingPlayer.id, black: socket.id },
-      nicknames: {
-        red: waitingPlayer.nickname || 'Red',
-        black: socket.nickname || 'Black'
-      },
-      turn: 'red', // red starts
-      timerRed: 180,
-      timerBlack: 180,
-      capturedForRed: 0,
-      capturedForBlack: 0,
-      moveHistory: [],  // Initialize move history array
-      startTime: Date.now(), // <-- Record game start time
-      interval: null
-    };
+    // When pairing players, store the game start time:
+games[roomId] = {
+  board: createInitialBoard(),
+  players: { red: waitingPlayer.id, black: socket.id },
+  nicknames: {
+    red: waitingPlayer.nickname || 'Red',
+    black: socket.nickname || 'Black'
+  },
+  turn: 'red', // red starts
+  timerRed: 180,
+  timerBlack: 180,
+  capturedForRed: 0,
+  capturedForBlack: 0,
+  moveHistory: [],  // Initialize move history array
+  startTime: Date.now(),  // Record game start time
+  interval: null
+};
+
 
     io.to(roomId).emit('gameStart', {
       color: 'red',
@@ -204,27 +205,29 @@ io.on('connection', (socket) => {
     const roomId = rooms[0];
     const game = games[roomId];
     if (!game) return;
-
+    
     const playerColor = game.players.red === socket.id ? 'red' : 'black';
     if (game.turn !== playerColor) return;
-
+    
     const { from, to } = data;
     if (!isValidMove(game, from, to, playerColor)) return;
-
+    
     let moveType = "move";
     const piece = game.board[from.row][from.col];
     game.board[to.row][to.col] = piece;
     game.board[from.row][from.col] = null;
-
-    // Record the move with relative time in seconds:
+    
+    // Record move with relative timestamp and current timer values.
     game.moveHistory.push({
       player: playerColor,
       from,
       to,
-      moveType: null, // We'll update this below if necessary.
-      timestamp: Math.floor((Date.now() - game.startTime) / 1000) // seconds since game start
+      moveType: null, // Will be set below.
+      timestamp: Math.floor((Date.now() - game.startTime) / 1000),
+      timerRed: game.timerRed,
+      timerBlack: game.timerBlack
     });
-
+    
     // Check for capture.
     if (Math.abs(to.row - from.row) === 2 && Math.abs(to.col - from.col) === 2) {
       moveType = "capture";
@@ -240,57 +243,40 @@ io.on('connection', (socket) => {
         }
       }
     }
-
-    // Update the last move record with the move type.
+    
+    // Update the last move with its type.
     game.moveHistory[game.moveHistory.length - 1].moveType = moveType;
-
-    // Check win condition.
+    
+    // Win condition: a piece reaches the enemy side.
     if ((playerColor === 'red' && to.row === 0) ||
-      (playerColor === 'black' && to.row === 7)) {
+        (playerColor === 'black' && to.row === 7)) {
       moveType = "win";
       game.moveHistory[game.moveHistory.length - 1].moveType = moveType;
       const scores = computeScores(game);
-      // io.to(roomId).emit('update', {
-      //   board: game.board,
-      //   turn: game.turn,
-      //   scores,
-      //   moveType
-      // });
-
-      // Also in the win condition block inside makeMove, include moveHistory:
       io.to(roomId).emit('update', {
         board: game.board,
         turn: game.turn,
         scores,
         moveType,
-        moveHistory: game.moveHistory   // <-- added
+        moveHistory: game.moveHistory
       });
-
       io.to(roomId).emit('gameOver', { winner: playerColor, scores, winReason: "Breaching other Side" });
       writeGameHistory(roomId, game);
       clearInterval(game.interval);
       return;
     }
-
+    
     // Switch turn.
     const opponentColor = playerColor === 'red' ? 'black' : 'red';
     game.turn = opponentColor;
-
+    
     const scores = computeScores(game);
-    // io.to(roomId).emit('update', {
-    //   board: game.board,
-    //   turn: game.turn,
-    //   scores,
-    //   moveType
-    // });
-
-    // In the move event, after processing a move, update the update emission:
     io.to(roomId).emit('update', {
       board: game.board,
       turn: game.turn,
       scores,
       moveType,
-      moveHistory: game.moveHistory   // <-- added
+      moveHistory: game.moveHistory
     });
     console.log("move made");
   });

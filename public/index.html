@@ -17,13 +17,30 @@
   </div>
   <canvas id="gameCanvas" width="600" height="600"></canvas>
   
-  <!-- New Move History box -->
+  <!-- Move History box -->
   <div id="moveHistory">
     <h3>Move History</h3>
-    <ol id="moveList"></ol>
+    <ol id="moveList">
+      <!-- TODO: each element can be clicked on and then the game will set the board up to reflect the game state at that current move -->
+    </ol>
+    <!-- TODO: Go back to last move -->
+    <button id="prevButton"> << Previous </button>
+    <!-- TODO: Go onward to next move made -->
+    <button id="nextButton"> Next >> </button> 
   </div>
+  <!-- TODO: When game is over this button allow the player to review the moves made in the game  -->
+  <button id="reviewButton">Review this Game</button>
+  <!-- TODO: When game is over or not yet started this button allow the player to preview a game -->
+  <button id="previewButton">Preview a Game</button>
+  <!-- TODO: When game is over this button allow the player to look for a new game  -->
+  <button id="newGameButton">New Game</button>
+  <!-- TODO: Copies the Move History  -->
+  <button id="copyButton">Copy/Share Game</button>
+  <!-- TODO: When game is in preview mode, it should load a game based off the move history pasted in here -->
+  <textarea id="previewText" placeholder="Paste move history JSON here..."></textarea>
   
   <script src="/socket.io/socket.io.js"></script>
   <script src="client.js"></script>
 </body>
 </html>
+

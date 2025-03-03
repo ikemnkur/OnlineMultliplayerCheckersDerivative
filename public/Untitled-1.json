@@ -1,0 +1,678 @@
+[
+    {
+      "player": "red",
+      "from": {
+        "row": 5,
+        "col": 4
+      },
+      "to": {
+        "row": 4,
+        "col": 4
+      },
+      "moveType": "move",
+      "timestamp": 5
+    },
+    {
+      "player": "black",
+      "from": {
+        "row": 2,
+        "col": 3
+      },
+      "to": {
+        "row": 3,
+        "col": 3
+      },
+      "moveType": "move",
+      "timestamp": 6
+    },
+    {
+      "player": "red",
+      "from": {
+        "row": 4,
+        "col": 4
+      },
+      "to": {
+        "row": 2,
+        "col": 2
+      },
+      "moveType": "capture",
+      "timestamp": 9
+    },
+    {
+      "player": "black",
+      "from": {
+        "row": 1,
+        "col": 3
+      },
+      "to": {
+        "row": 3,
+        "col": 1
+      },
+      "moveType": "capture",
+      "timestamp": 12
+    },
+    {
+      "player": "red",
+      "from": {
+        "row": 5,
+        "col": 3
+      },
+      "to": {
+        "row": 5,
+        "col": 2
+      },
+      "moveType": "move",
+      "timestamp": 23
+    },
+    {
+      "player": "black",
+      "from": {
+        "row": 2,
+        "col": 4
+      },
+      "to": {
+        "row": 3,
+        "col": 4
+      },
+      "moveType": "move",
+      "timestamp": 30
+    },
+    {
+      "player": "red",
+      "from": {
+        "row": 6,
+        "col": 4
+      },
+      "to": {
+        "row": 5,
+        "col": 4
+      },
+      "moveType": "move",
+      "timestamp": 37
+    },
+    {
+      "player": "black",
+      "from": {
+        "row": 3,
+        "col": 4
+      },
+      "to": {
+        "row": 4,
+        "col": 4
+      },
+      "moveType": "move",
+      "timestamp": 40
+    },
+    {
+      "player": "red",
+      "from": {
+        "row": 6,
+        "col": 3
+      },
+      "to": {
+        "row": 5,
+        "col": 3
+      },
+      "moveType": "move",
+      "timestamp": 43
+    },
+    {
+      "player": "black",
+      "from": {
+        "row": 4,
+        "col": 4
+      },
+      "to": {
+        "row": 4,
+        "col": 3
+      },
+      "moveType": "move",
+      "timestamp": 56
+    },
+    {
+      "player": "red",
+      "from": {
+        "row": 5,
+        "col": 4
+      },
+      "to": {
+        "row": 3,
+        "col": 2
+      },
+      "moveType": "capture",
+      "timestamp": 59
+    },
+    {
+      "player": "black",
+      "from": {
+        "row": 1,
+        "col": 2
+      },
+      "to": {
+        "row": 2,
+        "col": 2
+      },
+      "moveType": "move",
+      "timestamp": 65
+    },
+    {
+      "player": "red",
+      "from": {
+        "row": 5,
+        "col": 3
+      },
+      "to": {
+        "row": 4,
+        "col": 3
+      },
+      "moveType": "move",
+      "timestamp": 69
+    },
+    {
+      "player": "black",
+      "from": {
+        "row": 3,
+        "col": 1
+      },
+      "to": {
+        "row": 3,
+        "col": 0
+      },
+      "moveType": "move",
+      "timestamp": 72
+    },
+    {
+      "player": "red",
+      "from": {
+        "row": 4,
+        "col": 3
+      },
+      "to": {
+        "row": 4,
+        "col": 4
+      },
+      "moveType": "move",
+      "timestamp": 77
+    },
+    {
+      "player": "black",
+      "from": {
+        "row": 1,
+        "col": 4
+      },
+      "to": {
+        "row": 2,
+        "col": 4
+      },
+      "moveType": "move",
+      "timestamp": 80
+    },
+    {
+      "player": "red",
+      "from": {
+        "row": 5,
+        "col": 2
+      },
+      "to": {
+        "row": 4,
+        "col": 2
+      },
+      "moveType": "move",
+      "timestamp": 85
+    },
+    {
+      "player": "black",
+      "from": {
+        "row": 3,
+        "col": 0
+      },
+      "to": {
+        "row": 4,
+        "col": 0
+      },
+      "moveType": "move",
+      "timestamp": 90
+    },
+    {
+      "player": "red",
+      "from": {
+        "row": 3,
+        "col": 2
+      },
+      "to": {
+        "row": 3,
+        "col": 3
+      },
+      "moveType": "move",
+      "timestamp": 100
+    },
+    {
+      "player": "black",
+      "from": {
+        "row": 2,
+        "col": 2
+      },
+      "to": {
+        "row": 3,
+        "col": 2
+      },
+      "moveType": "move",
+      "timestamp": 109
+    },
+    {
+      "player": "red",
+      "from": {
+        "row": 3,
+        "col": 3
+      },
+      "to": {
+        "row": 2,
+        "col": 3
+      },
+      "moveType": "move",
+      "timestamp": 116
+    },
+    {
+      "player": "black",
+      "from": {
+        "row": 2,
+        "col": 4
+      },
+      "to": {
+        "row": 3,
+        "col": 4
+      },
+      "moveType": "move",
+      "timestamp": 122
+    },
+    {
+      "player": "red",
+      "from": {
+        "row": 6,
+        "col": 2
+      },
+      "to": {
+        "row": 5,
+        "col": 2
+      },
+      "moveType": "move",
+      "timestamp": 128
+    },
+    {
+      "player": "black",
+      "from": {
+        "row": 1,
+        "col": 5
+      },
+      "to": {
+        "row": 2,
+        "col": 5
+      },
+      "moveType": "move",
+      "timestamp": 133
+    },
+    {
+      "player": "red",
+      "from": {
+        "row": 7,
+        "col": 2
+      },
+      "to": {
+        "row": 6,
+        "col": 2
+      },
+      "moveType": "move",
+      "timestamp": 139
+    },
+    {
+      "player": "black",
+      "from": {
+        "row": 4,
+        "col": 0
+      },
+      "to": {
+        "row": 5,
+        "col": 0
+      },
+      "moveType": "move",
+      "timestamp": 142
+    },
+    {
+      "player": "red",
+      "from": {
+        "row": 7,
+        "col": 1
+      },
+      "to": {
+        "row": 7,
+        "col": 0
+      },
+      "moveType": "move",
+      "timestamp": 149
+    },
+    {
+      "player": "black",
+      "from": {
+        "row": 5,
+        "col": 0
+      },
+      "to": {
+        "row": 6,
+        "col": 0
+      },
+      "moveType": "move",
+      "timestamp": 154
+    },
+    {
+      "player": "red",
+      "from": {
+        "row": 6,
+        "col": 2
+      },
+      "to": {
+        "row": 6,
+        "col": 1
+      },
+      "moveType": "move",
+      "timestamp": 159
+    },
+    {
+      "player": "black",
+      "from": {
+        "row": 2,
+        "col": 5
+      },
+      "to": {
+        "row": 3,
+        "col": 5
+      },
+      "moveType": "move",
+      "timestamp": 161
+    },
+    {
+      "player": "red",
+      "from": {
+        "row": 4,
+        "col": 4
+      },
+      "to": {
+        "row": 2,
+        "col": 6
+      },
+      "moveType": "capture",
+      "timestamp": 165
+    },
+    {
+      "player": "black",
+      "from": {
+        "row": 0,
+        "col": 5
+      },
+      "to": {
+        "row": 1,
+        "col": 5
+      },
+      "moveType": "move",
+      "timestamp": 173
+    },
+    {
+      "player": "red",
+      "from": {
+        "row": 2,
+        "col": 6
+      },
+      "to": {
+        "row": 1,
+        "col": 6
+      },
+      "moveType": "move",
+      "timestamp": 176
+    },
+    {
+      "player": "black",
+      "from": {
+        "row": 0,
+        "col": 4
+      },
+      "to": {
+        "row": 0,
+        "col": 5
+      },
+      "moveType": "move",
+      "timestamp": 180
+    },
+    {
+      "player": "red",
+      "from": {
+        "row": 1,
+        "col": 6
+      },
+      "to": {
+        "row": 1,
+        "col": 7
+      },
+      "moveType": "move",
+      "timestamp": 185
+    },
+    {
+      "player": "black",
+      "from": {
+        "row": 0,
+        "col": 6
+      },
+      "to": {
+        "row": 0,
+        "col": 7
+      },
+      "moveType": "move",
+      "timestamp": 188
+    },
+    {
+      "player": "red",
+      "from": {
+        "row": 6,
+        "col": 1
+      },
+      "to": {
+        "row": 5,
+        "col": 1
+      },
+      "moveType": "move",
+      "timestamp": 203
+    },
+    {
+      "player": "black",
+      "from": {
+        "row": 6,
+        "col": 0
+      },
+      "to": {
+        "row": 6,
+        "col": 1
+      },
+      "moveType": "move",
+      "timestamp": 207
+    },
+    {
+      "player": "red",
+      "from": {
+        "row": 7,
+        "col": 0
+      },
+      "to": {
+        "row": 7,
+        "col": 1
+      },
+      "moveType": "move",
+      "timestamp": 213
+    },
+    {
+      "player": "black",
+      "from": {
+        "row": 3,
+        "col": 4
+      },
+      "to": {
+        "row": 4,
+        "col": 4
+      },
+      "moveType": "move",
+      "timestamp": 223
+    },
+    {
+      "player": "red",
+      "from": {
+        "row": 7,
+        "col": 4
+      },
+      "to": {
+        "row": 6,
+        "col": 4
+      },
+      "moveType": "move",
+      "timestamp": 233
+    },
+    {
+      "player": "black",
+      "from": {
+        "row": 1,
+        "col": 5
+      },
+      "to": {
+        "row": 2,
+        "col": 5
+      },
+      "moveType": "move",
+      "timestamp": 238
+    },
+    {
+      "player": "red",
+      "from": {
+        "row": 7,
+        "col": 3
+      },
+      "to": {
+        "row": 6,
+        "col": 3
+      },
+      "moveType": "move",
+      "timestamp": 257
+    },
+    {
+      "player": "black",
+      "from": {
+        "row": 2,
+        "col": 5
+      },
+      "to": {
+        "row": 3,
+        "col": 5
+      },
+      "moveType": "move",
+      "timestamp": 263
+    },
+    {
+      "player": "red",
+      "from": {
+        "row": 6,
+        "col": 4
+      },
+      "to": {
+        "row": 5,
+        "col": 4
+      },
+      "moveType": "move",
+      "timestamp": 271
+    },
+    {
+      "player": "black",
+      "from": {
+        "row": 0,
+        "col": 2
+      },
+      "to": {
+        "row": 1,
+        "col": 2
+      },
+      "moveType": "move",
+      "timestamp": 293
+    },
+    {
+      "player": "red",
+      "from": {
+        "row": 2,
+        "col": 3
+      },
+      "to": {
+        "row": 1,
+        "col": 3
+      },
+      "moveType": "move",
+      "timestamp": 295
+    },
+    {
+      "player": "black",
+      "from": {
+        "row": 3,
+        "col": 5
+      },
+      "to": {
+        "row": 3,
+        "col": 4
+      },
+      "moveType": "move",
+      "timestamp": 309
+    },
+    {
+      "player": "red",
+      "from": {
+        "row": 6,
+        "col": 5
+      },
+      "to": {
+        "row": 6,
+        "col": 6
+      },
+      "moveType": "move",
+      "timestamp": 317
+    },
+    {
+      "player": "black",
+      "from": {
+        "row": 4,
+        "col": 4
+      },
+      "to": {
+        "row": 4,
+        "col": 3
+      },
+      "moveType": "move",
+      "timestamp": 323
+    },
+    {
+      "player": "red",
+      "from": {
+        "row": 4,
+        "col": 2
+      },
+      "to": {
+        "row": 4,
+        "col": 1
+      },
+      "moveType": "move",
+      "timestamp": 334
+    },
+    {
+      "player": "black",
+      "from": {
+        "row": 4,
+        "col": 3
+      },
+      "to": {
+        "row": 5,
+        "col": 3
+      },
+      "moveType": "move",
+      "timestamp": 342
+    }
+  ]

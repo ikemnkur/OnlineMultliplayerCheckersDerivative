@@ -36,11 +36,11 @@ let myNickname = nickname;
 let opponentNickname = "Opponent";
 let selectedPiece = null; // stored in server (unrotated) coordinates
 
-// Variables for preview mode:
+// Variables for preview mode.
 let previewMode = false;       // if true, we're in preview/review mode
-let previewHistory = [];       // move history array to be used for previewing
+let previewHistory = [];       // move history array for previewing
 let previewIndex = 0;          // current move index in preview mode
-let initialBoard = null;       // store a deep copy of the board at game start
+let initialBoard = null;       // deep copy of the board at game start
 
 // Preload sound effects.
 const selectSound = new Audio('sounds/select.mp3');
@@ -54,12 +54,40 @@ const startSound = new Audio('sounds/start.mp3');
 let warningPlayed = false;  // play only once per turn
 let lastTurn;               // to detect turn change
 
-// Utility: Deep clone a board.
+// If the board is empty on load (e.g. page refresh) draw an empty grid.
+window.onload = function() {
+  if (!board || board.length === 0) {
+    board = Array(gridSize).fill().map(() => Array(gridSize).fill(null));
+    drawBoard();
+  }
+};
+
+// Compute local scores from a board state.
+// For red: sum((8 - row)^2) for each red piece.
+// For black: sum((row + 1)^2) for each black piece.
+function computeScoresLocal(simBoard) {
+  let scoreRed = 0, scoreBlack = 0;
+  for (let r = 0; r < gridSize; r++) {
+    for (let c = 0; c < gridSize; c++) {
+      const piece = simBoard[r][c];
+      if (piece) {
+        if (piece.color === 'red') {
+          scoreRed += Math.pow(8 - r, 2);
+        } else {
+          scoreBlack += Math.pow(r + 1, 2);
+        }
+      }
+    }
+  }
+  return { scoreRed, scoreBlack };
+}
+
+// Deep clone a board.
 function cloneBoard(board) {
   return JSON.parse(JSON.stringify(board));
 }
 
-// Function to simulate board state at a given move index.
+// Simulate board state at a given move index.
 function simulateBoardAtMove(index, history, baseBoard) {
   let simBoard = cloneBoard(baseBoard);
   for (let i = 0; i <= index && i < history.length; i++) {
@@ -80,18 +108,31 @@ function simulateBoardAtMove(index, history, baseBoard) {
   return simBoard;
 }
 
-// Update the board for preview mode using the simulated state.
+// Update the preview board state and update score/time display.
 function updatePreviewBoard() {
   if (!previewMode || !initialBoard) return;
   board = simulateBoardAtMove(previewIndex, previewHistory, initialBoard);
   drawBoard();
-  // Optionally highlight the selected move in the list.
+  // Highlight the selected move in the list.
   Array.from(moveList.children).forEach((li, idx) => {
     li.style.backgroundColor = (idx === previewIndex) ? "#ddd" : "";
   });
+  // Update score and time stats.
+  let simScores = computeScoresLocal(board);
+  let myScore, oppScore;
+  if (myColor === 'red') {
+    myScore = simScores.scoreRed;
+    oppScore = simScores.scoreBlack;
+  } else {
+    myScore = simScores.scoreBlack;
+    oppScore = simScores.scoreRed;
+  }
+  // Also display the time of the current move.
+  let currentTime = previewHistory[previewIndex] ? previewHistory[previewIndex].timestamp : 0;
+  scoreDiv.innerText = `Score: You ${myScore} - Opponent ${oppScore}. Move Time: ${currentTime}s`;
 }
 
-// Draw the board and pieces (rotated for black).
+// Draw the board (with rotation for black).
 function drawBoard() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   
@@ -130,11 +171,12 @@ function drawBoard() {
   }
 }
 
+// Update move history display (using an unordered list).
 function updateMoveHistory(moves) {
   moveList.innerHTML = "";
   moves.forEach((move, index) => {
     let li = document.createElement("li");
-    li.textContent = `${move.timestamp}s - ${move.player.toUpperCase()} moved from (${move.from.row},${move.from.col}) to (${move.to.row},${move.to.col})` +
+    li.textContent = `${move.timestamp}s - ${move.player.toUpperCase()} from (${move.from.row},${move.from.col}) to (${move.to.row},${move.to.col})` +
                      (move.moveType && move.moveType !== "move" ? ` [${move.moveType.toUpperCase()}]` : "");
     li.addEventListener('click', () => {
       if (!previewMode) return;
@@ -145,10 +187,10 @@ function updateMoveHistory(moves) {
   });
 }
 
-
 // Handle canvas clicks for move selection.
 canvas.addEventListener('click', (e) => {
-  if (!myTurn || previewMode) return; // ignore clicks in preview mode
+  if (!myTurn || previewMode) return;
+  
   const rect = canvas.getBoundingClientRect();
   const x = e.clientX - rect.left;
   const y = e.clientY - rect.top;
@@ -189,12 +231,12 @@ socket.on('update', (data) => {
   }
   myTurn = data.turn === myColor;
   
-  // Save initial board state if not in preview mode.
+  // Save initial board state on first update.
   if (!initialBoard && data.board) {
     initialBoard = cloneBoard(data.board);
   }
   
-  // Also update move history if not in preview mode.
+  // If not in preview mode, update previewHistory from server update.
   if (!previewMode) {
     previewHistory = data.moveHistory || [];
     previewIndex = previewHistory.length - 1;
@@ -215,10 +257,20 @@ socket.on('update', (data) => {
     myScore = scores.scoreBlack;
     oppScore = scores.scoreRed;
   }
-  scoreDiv.innerText = `Score: You ${myScore} - Opponent ${oppScore}`;
+  // In preview mode, use local score computation.
+  if (previewMode && initialBoard) {
+    let simScores = computeScoresLocal(simulateBoardAtMove(previewIndex, previewHistory, initialBoard));
+    myScore = (myColor === 'red') ? simScores.scoreRed : simScores.scoreBlack;
+    oppScore = (myColor === 'red') ? simScores.scoreBlack : simScores.scoreRed;
+    // Also display the time of the current move.
+    let currentTime = previewHistory[previewIndex] ? previewHistory[previewIndex].timestamp : 0;
+    scoreDiv.innerText = `Score: You ${myScore} - Opponent ${oppScore}. Move Time: ${currentTime}s`;
+  } else {
+    scoreDiv.innerText = `Score: You ${myScore} - Opponent ${oppScore}`;
+  }
+  
   statusDiv.innerText = `${myTurn ? "Your turn" : "Opponent's turn"}. You: ${myNickname} (${myColor}) vs ${opponentNickname}`;
   
-  // Play move sounds.
   if (data.moveType) {
     if (data.moveType === 'capture') {
       captureSound.play();
@@ -259,21 +311,18 @@ socket.on('gameOver', (data) => {
 
 // --- Button Event Handlers ---
 
-// Previous move: go back one move in preview mode.
 prevButton.addEventListener('click', () => {
   if (!previewMode || previewHistory.length === 0) return;
   previewIndex = Math.max(0, previewIndex - 1);
   updatePreviewBoard();
 });
 
-// Next move: go forward one move.
 nextButton.addEventListener('click', () => {
   if (!previewMode || previewHistory.length === 0) return;
   previewIndex = Math.min(previewHistory.length - 1, previewIndex + 1);
   updatePreviewBoard();
 });
 
-// Review this Game: enable preview mode using current game's move history.
 reviewButton.addEventListener('click', () => {
   if (previewHistory.length === 0) return;
   previewMode = true;
@@ -282,20 +331,21 @@ reviewButton.addEventListener('click', () => {
   statusDiv.innerText = `Review Mode: Showing final move.`;
 });
 
-// Preview a Game: load move history from textarea.
 previewButton.addEventListener('click', () => {
+  // Clear current move history.
+  previewHistory = [];
+  moveList.innerHTML = "";
   try {
     let parsed = JSON.parse(previewText.value);
     if (Array.isArray(parsed)) {
       previewMode = true;
       previewHistory = parsed;
       previewIndex = previewHistory.length - 1;
-      // For previewing an arbitrary game, we assume the same initial board as our derivative game.
-      // Here we simulate it by using the initial board stored from this session;
-      // in a real scenario you might need to store and load the proper initial state.
       if (!initialBoard) {
-        alert("No initial board state available from current game; using default.");
-        // You can define a defaultInitialBoard() if necessary.
+        alert("No initial board state available from current game; using default initial board.");
+        // Create a default initial board based on our derivative game.
+        initialBoard = Array(8).fill().map(() => Array(8).fill(null));
+        // (You might want to call your createInitialBoard() function here.)
       }
       updatePreviewBoard();
       statusDiv.innerText = `Preview Mode: Loaded external game.`;
@@ -307,12 +357,10 @@ previewButton.addEventListener('click', () => {
   }
 });
 
-// New Game: simply reload the page.
 newGameButton.addEventListener('click', () => {
   location.reload();
 });
 
-// Copy/Share Game: copy current move history JSON to clipboard.
 copyButton.addEventListener('click', () => {
   if (previewHistory.length === 0) return;
   navigator.clipboard.writeText(JSON.stringify(previewHistory, null, 2))

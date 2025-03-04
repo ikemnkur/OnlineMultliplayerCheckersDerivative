@@ -5,6 +5,7 @@ let nickname = prompt("Enter your nickname:");
 if (!nickname) {
   nickname = "Player";
 }
+localStorage.setItem("nickname", nickname);
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -24,8 +25,6 @@ const copyButton = document.getElementById('copyButton');
 const previewText = document.getElementById('previewText');
 
 const socket = io();
-
-// Send the nickname to the server.
 socket.emit('setNickname', nickname);
 
 const gridSize = 8;
@@ -112,11 +111,9 @@ function updatePreviewBoard() {
   if (!previewMode || !initialBoard) return;
   board = simulateBoardAtMove(previewIndex, previewHistory, initialBoard);
   drawBoard();
-  // Highlight the selected move in the list.
   Array.from(moveList.children).forEach((li, idx) => {
     li.style.backgroundColor = (idx === previewIndex) ? "#ddd" : "";
   });
-  // Update score and time stats.
   let simScores = computeScoresLocal(board);
   let myScore, oppScore;
   if (myColor === 'red') {
@@ -126,7 +123,6 @@ function updatePreviewBoard() {
     myScore = simScores.scoreBlack;
     oppScore = simScores.scoreRed;
   }
-  // Display the current move's timestamp and timers from the move history.
   let currentMove = previewHistory[previewIndex] || {};
   let currentTime = currentMove.timestamp || 0;
   timerRedSpan.innerText = (currentMove.timerRed !== undefined) ? currentMove.timerRed : '';
@@ -137,13 +133,11 @@ function updatePreviewBoard() {
 // Draw the board (with rotation for black).
 function drawBoard() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  
   for (let r = 0; r < gridSize; r++) {
     for (let c = 0; c < gridSize; c++) {
       let dispRow = (myColor === 'black') ? (gridSize - 1 - r) : r;
       ctx.fillStyle = ((r + c) % 2 === 1) ? "#769656" : "#EEEED2";
       ctx.fillRect(c * cellSize, dispRow * cellSize, cellSize, cellSize);
-      
       if (selectedPiece && selectedPiece.row === r && selectedPiece.col === c) {
         ctx.strokeStyle = "yellow";
         ctx.lineWidth = 3;
@@ -151,7 +145,6 @@ function drawBoard() {
       }
     }
   }
-  
   for (let r = 0; r < gridSize; r++) {
     for (let c = 0; c < gridSize; c++) {
       const piece = board[r] ? board[r][c] : null;
@@ -192,7 +185,6 @@ function updateMoveHistory(moves) {
 // Handle canvas clicks for move selection.
 canvas.addEventListener('click', (e) => {
   if (!myTurn || previewMode) return;
-  
   const rect = canvas.getBoundingClientRect();
   const x = e.clientX - rect.left;
   const y = e.clientY - rect.top;
@@ -201,7 +193,6 @@ canvas.addEventListener('click', (e) => {
   if (myColor === 'black') {
     row = gridSize - 1 - row;
   }
-  
   if (!selectedPiece) {
     if (board[row] && board[row][col] && board[row][col].color === myColor) {
       selectedPiece = { row, col };
@@ -246,27 +237,75 @@ socket.on('gameStart', (data) => {
   startSound.play();
 });
 
-// On update, refresh board, move history, score, and status.
+// --- Stats Saving via localStorage ---
+// We'll update stats in localStorage after a game is over.
+function updatePlayerStats(result, moveHistory, scores, winReason) {
+  // Retrieve saved stats or initialize.
+  let stats = JSON.parse(localStorage.getItem("playerStats")) || {
+    gamesPlayed: 0,
+    gamesWon: 0,
+    gamesLost: 0,
+    gamesDraw: 0,
+    winMeans: {}, // e.g., { "Timeout": 0, "Breaching other Side": 0, "Abandonment": 0, "Higher Score": 0 }
+    totalTime: 0, // seconds
+    totalMoves: 0,
+    totalScoreWhenWon: 0,
+    totalScoreWhenLost: 0
+  };
+  let gameTime = moveHistory.length > 0 ? moveHistory[moveHistory.length - 1].timestamp : 0;
+  let moves = moveHistory.length;
+  stats.gamesPlayed++;
+  stats.totalTime += gameTime;
+  stats.totalMoves += moves;
+  if (result === "win") {
+    stats.gamesWon++;
+    let reason = winReason || "Unknown";
+    stats.winMeans[reason] = (stats.winMeans[reason] || 0) + 1;
+    stats.totalScoreWhenWon += (myColor === 'red' ? scores.scoreRed : scores.scoreBlack);
+  } else if (result === "loss") {
+    stats.gamesLost++;
+    stats.totalScoreWhenLost += (myColor === 'red' ? scores.scoreRed : scores.scoreBlack);
+  } else {
+    stats.gamesDraw++;
+  }
+  localStorage.setItem("playerStats", JSON.stringify(stats));
+}
+
+// On gameOver, update stats.
+socket.on('gameOver', (data) => {
+  if (data.winner) {
+    if (data.winner === myColor) {
+      statusDiv.innerText = `You (${myColor}) have: Won via ${data.winReason}`;
+      winSound.play();
+      updatePlayerStats("win", previewHistory, data.scores, data.winReason);
+    } else {
+      statusDiv.innerText = `You (${myColor}) have: Lost via ${data.winReason}`;
+      loseSound.play();
+      updatePlayerStats("loss", previewHistory, data.scores);
+    }
+  } else {
+    statusDiv.innerText = "Draw!";
+    updatePlayerStats("draw", previewHistory, data.scores);
+  }
+  myTurn = false;
+});
+
 socket.on('update', (data) => {
   if (!previewMode) {
     board = data.board;
   }
   myTurn = data.turn === myColor;
-  
   if (!initialBoard && data.board) {
     initialBoard = cloneBoard(data.board);
   }
-  
   if (!previewMode) {
     previewHistory = data.moveHistory || [];
     previewIndex = previewHistory.length - 1;
   }
-  
   if (!previewMode) {
     drawBoard();
   }
   updateMoveHistory(previewHistory);
-  
   let scores = data.scores;
   let myScore, oppScore;
   if (myColor === 'red') {
@@ -276,7 +315,6 @@ socket.on('update', (data) => {
     myScore = scores.scoreBlack;
     oppScore = scores.scoreRed;
   }
-  
   if (previewMode && initialBoard) {
     let simScores = computeScoresLocal(simulateBoardAtMove(previewIndex, previewHistory, initialBoard));
     myScore = (myColor === 'red') ? simScores.scoreRed : simScores.scoreBlack;
@@ -286,9 +324,7 @@ socket.on('update', (data) => {
   } else {
     scoreDiv.innerText = `Score: You ${myScore} - Opponent ${oppScore}`;
   }
-  
   statusDiv.innerText = `${myTurn ? "Your turn" : "Opponent's turn"}. You: ${myNickname} (${myColor}) vs ${opponentNickname}`;
-  
   if (data.moveType) {
     if (data.moveType === 'capture') {
       captureSound.play();
@@ -301,7 +337,6 @@ socket.on('update', (data) => {
 socket.on('timer', (data) => {
   timerRedSpan.innerText = data.timerRed;
   timerBlackSpan.innerText = data.timerBlack;
-  
   if (myColor === 'red' && data.timerRed < 20 && !warningPlayed) {
     warningSound.play();
     warningPlayed = true;
@@ -310,21 +345,6 @@ socket.on('timer', (data) => {
     warningSound.play();
     warningPlayed = true;
   }
-});
-
-socket.on('gameOver', (data) => {
-  if (data.winner) {
-    if (data.winner === myColor) {
-      statusDiv.innerText = `You (${myColor}) have: Won via ${data.winReason}`;
-      winSound.play();
-    } else {
-      statusDiv.innerText = `You (${myColor}) have: Lost via ${data.winReason}`;
-      loseSound.play();
-    }
-  } else {
-    statusDiv.innerText = "Draw!";
-  }
-  myTurn = false;
 });
 
 // --- Button Event Handlers ---
@@ -353,9 +373,9 @@ playButton.addEventListener('click', () => {
     autoPlayInterval = setInterval(() => {
       if (!previewMode || previewHistory.length === 0) return;
       if (previewIndex >= previewHistory.length - 1) {
-        clearInterval(autoPlayInterval);
-        mode = "pause";
-        return;
+         clearInterval(autoPlayInterval);
+         mode = "pause";
+         return;
       }
       previewIndex = Math.min(previewHistory.length - 1, previewIndex + 1);
       updatePreviewBoard();
@@ -372,7 +392,6 @@ reviewButton.addEventListener('click', () => {
 });
 
 previewButton.addEventListener('click', () => {
-  // Clear current move history.
   previewHistory = [];
   moveList.innerHTML = "";
   try {
@@ -414,7 +433,6 @@ copyButton.addEventListener('click', () => {
 // Client-side createInitialBoard for preview mode.
 function createInitialBoard() {
   let board = Array(8).fill().map(() => Array(8).fill(null));
-  // Black pieces (top side)
   for (let c = 1; c <= 6; c++) {
     board[0][c] = { color: 'black', king: false };
   }
@@ -424,7 +442,6 @@ function createInitialBoard() {
   for (let c = 3; c <= 4; c++) {
     board[2][c] = { color: 'black', king: false };
   }
-  // Red pieces (bottom side)
   for (let c = 1; c <= 6; c++) {
     board[7][c] = { color: 'red', king: false };
   }

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Game Lobby</title>
+  <link rel="stylesheet" href="lobby.css">
+</head>
+<body>
+  <h1>Game Lobby</h1>
+  <input type="text" id="searchBar" placeholder="Search players...">
+  <div id="sortFilters">
+    <button data-sort="name">Sort by Name</button>
+    <button data-sort="avgScore">Sort by Avg Score</button>
+    <button data-sort="gamesPlayed">Sort by Games Played</button>
+    <button data-sort="avgTime">Sort by Avg Time</button>
+  </div>
+  <div id="playerListContainer">
+    <ul id="playerList">
+      <!-- Players will be listed here -->
+    </ul>
+  </div>
+
+  <!-- Live Chat Section -->
+  <div id="chatContainer">
+    <h2>Lobby Chat</h2>
+    <div id="chatArea"></div>
+    <form id="chatForm">
+      <input type="text" id="chatInput" placeholder="Type a message..." autocomplete="off" />
+      <button type="submit">Send</button>
+    </form>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="lobby.js"></script>
+</body>
+</html>

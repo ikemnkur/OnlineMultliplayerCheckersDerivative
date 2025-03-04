@@ -9,45 +9,12 @@
 
 <body>
   <h1>Derivative Checkers Game</h1>
-  <!-- Status line (for turn and win/lose messages) -->
-  <div id="status">Waiting for opponent...</div>
-  <!-- Score line (for scores and current move time in preview mode) -->
-  <div id="score"></div>
-  <div id="timers">
-    <div>Red Timer: <span id="timerRed">180</span> s</div>
-    <div>Black Timer: <span id="timerBlack">180</span> s</div>
-  </div>
-  <canvas id="gameCanvas" width="600" height="600"></canvas>
-
-  <!-- Move History box -->
-  <div id="moveHistory">
-    <h3>Move History</h3>
-    <ul id="moveList">
-      <!-- Each element is clickable to show board state at that move -->
-    </ul>
-  </div>
-  <!-- Navigation for move history -->
-  <div id="moveHistoryNav">
-    <button id="prevButton"> << Previous </button>
-    <button id="playButton"> Play </button>
-    <button id="nextButton"> Next >> </button>
-  </div>
-
-
-  <!-- Preview textarea in its own centered div -->
-  <div id="previewContainer">
-    <textarea id="previewText" placeholder="Paste move history JSON here..."></textarea>
-  </div>
-
- <!-- Other controls -->
   <div>
-    <button id="reviewButton">Review this Game</button>
-    <button id="previewButton">Preview a Game</button>
-    <button id="newGameButton">New Game</button>
-    <button id="copyButton">Copy/Share Game</button>
+    <button> LOGIN </button>
+    <button> SIGNUP </button>
+    <button> INFO </button>
   </div>
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="client.js"></script>
+
 </body>
 
 </html>

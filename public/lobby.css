@@ -1,0 +1,77 @@
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    padding: 20px;
+  }
+  
+  #searchBar {
+    width: 80%;
+    padding: 10px;
+    font-size: 16px;
+  }
+  
+  #sortFilters {
+    margin: 10px 0;
+  }
+  
+  #sortFilters button {
+    margin: 0 5px;
+    padding: 5px 10px;
+  }
+  
+  #playerListContainer {
+    border: 1px solid #ccc;
+    height: 400px;
+    overflow-y: scroll;
+    margin: 20px auto;
+    width: 80%;
+    text-align: left;
+  }
+  
+  #playerList {
+    list-style: none;
+    padding: 0;
+  }
+  
+  #playerList li {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+  }
+  
+  /* Chat container styles */
+  #chatContainer {
+    width: 80%;
+    margin: 20px auto;
+    text-align: left;
+    border: 1px solid #ccc;
+    padding: 10px;
+    border-radius: 5px;
+  }
+  
+  #chatArea {
+    height: 200px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    padding: 5px;
+    margin-bottom: 10px;
+  }
+  
+  #chatForm {
+    display: flex;
+  }
+  
+  #chatInput {
+    flex: 1;
+    padding: 8px;
+    font-size: 14px;
+  }
+  
+  #chatForm button {
+    padding: 8px 12px;
+    font-size: 14px;
+    background-color: #4285f4;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+  }
+  

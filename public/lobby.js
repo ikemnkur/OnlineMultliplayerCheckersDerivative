@@ -17,7 +17,12 @@ const searchBar = document.getElementById('searchBar');
 const sortButtons = document.querySelectorAll('#sortFilters button');
 
 // Ask for username (replace with proper login if needed)
-const username = prompt("Enter your username for the lobby:") || "Anonymous";
+let username = localStorage.getItem("username")
+if(username == null){
+  username = prompt("Enter your username for the lobby:") || "Anonymous";
+  localStorage.setItem("username", username)
+}
+
 
 // Emit join event
 socket.emit('joinLobby', username);
@@ -29,6 +34,8 @@ function getRandomInt(min, max) {
 
 // When a new player joins, simulate extra stats and add them.
 socket.on('playerJoined', (data) => {
+  // Avoid duplicating yourself.
+  if (data.username === username) return;
   const player = {
     username: data.username,
     avgScore: getRandomInt(0, 100),
@@ -49,6 +56,7 @@ socket.on('playerLeft', (data) => {
 socket.on('refreshPlayers', (serverPlayers) => {
   // Merge the server list with existing stats if available.
   players = serverPlayers.map(sp => {
+    // Skip if the username already exists in our array.
     const existing = players.find(p => p.username === sp.username);
     return existing || {
       username: sp.username,
@@ -116,6 +124,45 @@ function updatePlayerList() {
   filteredPlayers.forEach(player => {
     const li = document.createElement('li');
     li.textContent = `${player.username} - Avg Score: ${player.avgScore}, Games Played: ${player.gamesPlayed}, Avg Time: ${player.avgTime}s`;
+    
+    // Only add a challenge button if it's not your own username.
+    if (player.username !== username) {
+      const challengeBtn = document.createElement('button');
+      challengeBtn.textContent = 'Challenge';
+      challengeBtn.style.marginLeft = '10px';
+      challengeBtn.addEventListener('click', () => {
+        if (confirm(`Do you want to challenge ${player.username} to a game?`)) {
+          socket.emit('challengePlayer', { challenger: username, target: player.username });
+        }
+      });
+      li.appendChild(challengeBtn);
+    }
+    
     playerList.appendChild(li);
   });
 }
+
+// Listen for an incoming challenge.
+socket.on('incomingChallenge', (data) => {
+  if (confirm(`You have been challenged by ${data.challenger}. Accept challenge?`)) {
+    socket.emit('challengeResponse', { challenger: data.challenger, target: username, accepted: true });
+  } else {
+    socket.emit('challengeResponse', { challenger: data.challenger, target: username, accepted: false });
+  }
+});
+
+// Listen for challenge responses (for the challenger).
+socket.on('challengeResponse', (data) => {
+  if (data.accepted) {
+    alert(`${data.target} accepted your challenge!`);
+  } else {
+    alert(`${data.target} declined your challenge.`);
+  }
+});
+
+// Listen for start game signal.
+socket.on('startGame', (data) => {
+  alert(`Starting game with ${data.opponent}.`);
+  // Redirect to the game page with the room id (adjust the URL if needed)
+  window.location.href = `game.html?roomId=${data.roomId}`;
+});

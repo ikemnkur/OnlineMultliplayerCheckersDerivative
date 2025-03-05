@@ -8,32 +8,35 @@ const fs = require('fs'); // filesystem module
 const PORT = process.env.PORT || 3000;
 app.use(express.static(__dirname + '/public'));
 
+// Global object to keep track of online players: { username: socketId }
+const onlinePlayers = {};
 
 // Existing routes and socket.io logic for the game...
 app.get('/game', (req, res) => {
-  res.sendFile(path.join(__dirname + '/public', 'game.html'));
+  res.sendFile(path.join(__dirname, 'public', 'game.html'));
 });
 
+// this page is reservred the site new, videos, events, intro, player dashboard.
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // New routes for login, sign-up, and info pages
 app.get('/login', (req, res) => {
-  res.sendFile(path.join(__dirname + '/public', 'login.html'));
+  res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
 app.get('/signup', (req, res) => {
-  res.sendFile(path.join(__dirname + '/public', 'signup.html'));
+  res.sendFile(path.join(__dirname, 'public', 'signup.html'));
 });
 
 app.get('/info', (req, res) => {
-  res.sendFile(path.join(__dirname + '/public', 'info.html'));
+  res.sendFile(path.join(__dirname, 'public', 'info.html'));
 });
 
 // NEW: Routing for the lobby page
 app.get('/lobby', (req, res) => {
-  res.sendFile(path.join(__dirname + '/public', 'lobby.html'));
+  res.sendFile(path.join(__dirname, 'public', 'lobby.html'));
 });
 
 
@@ -114,8 +117,15 @@ function isValidMove(game, from, to, color) {
 
 // Write the game move history to a JSON file.
 function writeGameHistory(roomId, game) {
-  const filename = `game_history_${roomId.replace('#', '_')}_${Date.now()}.json`;
+  // Define the directory to store game histories.
+  const directory = path.join(__dirname, 'public', 'game_history');
+  // Ensure the directory exists.
+  fs.mkdirSync(directory, { recursive: true });
+  
+  // Create a filename using a template literal.
+  const filename = path.join(directory, `game_history_${roomId.replace('#', '_')}_${Date.now()}.json`);
   const data = JSON.stringify(game.moveHistory, null, 2);
+  
   fs.writeFile(filename, data, (err) => {
     if (err) {
       console.error("Error writing game history file:", err);
@@ -124,6 +134,7 @@ function writeGameHistory(roomId, game) {
     }
   });
 }
+
 
 // Start the timer for a game (3 minutes per player).
 function startTimer(gameId) {
@@ -154,154 +165,212 @@ function startTimer(gameId) {
 
 io.on('connection', (socket) => {
   console.log('A user connected: ' + socket.id);
+  const mode = socket.handshake.query.mode || 'lobby'; // default to lobby
 
-  // Handle lobby join event.
-  socket.on('joinLobby', (username) => {
-    console.log(`${username} joined the lobby`);
-    // Attach the username to the socket for later use.
-    socket.username = username;
-    // Broadcast to all clients that a new player has joined.
-    io.emit('playerJoined', { username });
-  });
+  // Lobby-related events
+  if (mode === 'lobby') {
 
-  // Handle lobby chat messages.
-  socket.on('lobbyMessage', (data) => {
-    // data should include the username and message text.
-    io.emit('lobbyMessage', data);
-  });
-
-  // When a client disconnects, remove them from the lobby.
-  socket.on('disconnect', () => {
-    if (socket.username) {
-      console.log(`${socket.username} left the lobby`);
-      io.emit('playerLeft', { username: socket.username });
-    }
-    console.log('A user disconnected');
-  });
-
-  socket.on('setNickname', (nickname) => {
-    socket.nickname = nickname;
-  });
-
-  // Pair players into a game room.
-  if (waitingPlayer) {
-    const roomId = waitingPlayer.id + '#' + socket.id;
-    socket.join(roomId);
-    waitingPlayer.join(roomId);
-
-    games[roomId] = {
-      board: createInitialBoard(),
-      players: { red: waitingPlayer.id, black: socket.id },
-      nicknames: {
-        red: waitingPlayer.nickname || 'Red',
-        black: socket.nickname || 'Black'
-      },
-      turn: 'red', // red starts
-      timerRed: 180,
-      timerBlack: 180,
-      capturedForRed: 0,
-      capturedForBlack: 0,
-      moveHistory: [],
-      startTime: Date.now(),
-      interval: null,
-      ready: { red: false, black: false } // readiness flags
-    };
-
-    // Instead of starting immediately, tell both players to confirm they're ready.
-    io.to(roomId).emit('waitingForReady', {
-      yourNickname: games[roomId].nicknames.red,
-      opponentNickname: games[roomId].nicknames.black,
-      color: 'red'
-    });
-    io.to(games[roomId].players.black).emit('waitingForReady', {
-      yourNickname: games[roomId].nicknames.black,
-      opponentNickname: games[roomId].nicknames.red,
-      color: 'black'
+    // Handle lobby join event.
+    socket.on('joinLobby', (username) => {
+      socket.username = username;  // Attach the username to the socket for later use.
+      onlinePlayers[username] = socket.id;
+      console.log(`${username} joined the lobby`);
+      io.emit('playerJoined', { username });// Broadcast to all clients that a new player has joined.
     });
 
-    waitingPlayer = null;
-  } else {
-    waitingPlayer = socket;
-    socket.emit('status', { message: 'Waiting for an opponent...' });
-  }
-
-  // Listen for playerReady events.
-  socket.on('playerReady', () => {
-    const rooms = [...socket.rooms].filter(r => r !== socket.id);
-    if (!rooms.length) return;
-    const roomId = rooms[0];
-    const game = games[roomId];
-    if (!game) return;
-    const playerColor = game.players.red === socket.id ? 'red' : 'black';
-    game.ready[playerColor] = true;
-    console.log(`Player ${playerColor} is ready in room ${roomId}`);
-    if (game.ready.red && game.ready.black) {
-      io.to(roomId).emit('gameStart', {
-        yourNickname: game.nicknames.red,
-        opponentNickname: game.nicknames.black,
-        color: 'red'
-      });
-      io.to(game.players.black).emit('gameStart', {
-        yourNickname: game.nicknames.black,
-        opponentNickname: game.nicknames.red,
-        color: 'black'
-      });
-      io.to(roomId).emit('update', {
-        board: game.board,
-        turn: game.turn,
-        scores: computeScores(game),
-        moveType: null,
-        moveHistory: game.moveHistory
-      });
-      io.to(roomId).emit('timer', { timerRed: 180, timerBlack: 180 });
-      startTimer(roomId);
-    }
-  });
-
-  socket.on('makeMove', (data) => {
-    // data: { from: { row, col }, to: { row, col } }
-    const rooms = [...socket.rooms].filter(r => r !== socket.id);
-    if (!rooms.length) return;
-    const roomId = rooms[0];
-    const game = games[roomId];
-    if (!game) return;
-    const playerColor = game.players.red === socket.id ? 'red' : 'black';
-    if (game.turn !== playerColor) return;
-    const { from, to } = data;
-    if (!isValidMove(game, from, to, playerColor)) return;
-    let moveType = "move";
-    const piece = game.board[from.row][from.col];
-    game.board[to.row][to.col] = piece;
-    game.board[from.row][from.col] = null;
-    // Record move with relative timestamp and current timer values.
-    game.moveHistory.push({
-      player: playerColor,
-      from,
-      to,
-      moveType: null, // will update below
-      timestamp: Math.floor((Date.now() - game.startTime) / 1000),
-      timerRed: game.timerRed,
-      timerBlack: game.timerBlack
+    // Challenge event from a challenger to a target player.
+    socket.on('challengePlayer', (data) => {
+      // data: { challenger, target }
+      const targetSocketId = onlinePlayers[data.target];
+      if (targetSocketId) {
+        io.to(targetSocketId).emit('incomingChallenge', { challenger: data.challenger });
+      } else {
+        // If target is offline, notify the challenger.
+        io.to(socket.id).emit('challengeResponse', { target: data.target, accepted: false, message: "Player offline" });
+      }
     });
-    if (Math.abs(to.row - from.row) === 2 && Math.abs(to.col - from.col) === 2) {
-      moveType = "capture";
-      const midRow = (from.row + to.row) / 2;
-      const midCol = (from.col + to.col) / 2;
-      const capturedPiece = game.board[midRow][midCol];
-      game.board[midRow][midCol] = null;
-      if (capturedPiece) {
-        if (capturedPiece.color === 'red') {
-          game.capturedForBlack += capturedPiece.row;
-        } else {
-          game.capturedForRed += (7 - capturedPiece.row);
+
+    // Response from the challenged player.
+    socket.on('challengeResponse', (data) => {
+      // data: { challenger, target, accepted }
+      const challengerSocketId = onlinePlayers[data.challenger];
+      if (challengerSocketId) {
+        io.to(challengerSocketId).emit('challengeResponse', { target: data.target, accepted: data.accepted });
+      }
+      if (data.accepted) {
+        // Create a unique room id.
+        const roomId = 'room-' + Math.random().toString(36).substr(2, 9);
+        const targetSocketId = onlinePlayers[data.target];
+        if (targetSocketId && challengerSocketId) {
+          // Make both players join the room.
+          io.sockets.sockets.get(targetSocketId).join(roomId);
+          io.sockets.sockets.get(challengerSocketId).join(roomId);
+          // Notify both players to start the game.
+          io.to(targetSocketId).emit('startGame', { roomId, opponent: data.challenger });
+          io.to(challengerSocketId).emit('startGame', { roomId, opponent: data.target });
         }
       }
+    });
+
+    // Handle lobby chat messages.
+    socket.on('lobbyMessage', (data) => {
+      // data should include the username and message text.
+      io.emit('lobbyMessage', data);
+    });
+
+    // When a client disconnects, remove them from the lobby.
+    socket.on('disconnect', () => {
+      if (socket.username) {
+        console.log(`${socket.username} left the lobby`);
+        delete onlinePlayers[socket.username];
+        io.emit('playerLeft', { username: socket.username });
+      }
+      console.log(`User ${socket.username} disconnected`);
+    });
+
+    socket.on('setNickname', (nickname) => {
+      socket.nickname = nickname;
+    });
+  }
+
+  // Only if in game mode, execute pairing logic.
+  if (mode === 'game') {
+
+    // Pair players into a game room.
+    if (waitingPlayer) {
+      const roomId = waitingPlayer.id + '#' + socket.id;
+      socket.join(roomId);
+      waitingPlayer.join(roomId);
+
+      games[roomId] = {
+        board: createInitialBoard(),
+        players: { red: waitingPlayer.id, black: socket.id },
+        nicknames: {
+          red: waitingPlayer.nickname || 'Red',
+          black: socket.nickname || 'Black'
+        },
+        turn: 'red', // red starts
+        timerRed: 180,
+        timerBlack: 180,
+        capturedForRed: 0,
+        capturedForBlack: 0,
+        moveHistory: [],
+        startTime: Date.now(),
+        interval: null,
+        ready: { red: false, black: false } // readiness flags
+      };
+
+      // Instead of starting immediately, tell both players to confirm they're ready.
+      io.to(roomId).emit('waitingForReady', {
+        yourNickname: games[roomId].nicknames.red,
+        opponentNickname: games[roomId].nicknames.black,
+        color: 'red'
+      });
+      io.to(games[roomId].players.black).emit('waitingForReady', {
+        yourNickname: games[roomId].nicknames.black,
+        opponentNickname: games[roomId].nicknames.red,
+        color: 'black'
+      });
+
+      waitingPlayer = null;
+    } else {
+      waitingPlayer = socket;
+      socket.emit('status', { message: 'Waiting for an opponent...' });
     }
-    game.moveHistory[game.moveHistory.length - 1].moveType = moveType;
-    if ((playerColor === 'red' && to.row === 0) ||
-      (playerColor === 'black' && to.row === 7)) {
-      moveType = "win";
+
+    // Listen for playerReady events.
+    socket.on('playerReady', () => {
+      const rooms = [...socket.rooms].filter(r => r !== socket.id);
+      if (!rooms.length) return;
+      const roomId = rooms[0];
+      const game = games[roomId];
+      if (!game) return;
+      const playerColor = game.players.red === socket.id ? 'red' : 'black';
+      game.ready[playerColor] = true;
+      console.log(`Player ${playerColor} is ready in room ${roomId}`);
+      if (game.ready.red && game.ready.black) {
+        io.to(roomId).emit('gameStart', {
+          yourNickname: game.nicknames.red,
+          opponentNickname: game.nicknames.black,
+          color: 'red'
+        });
+        io.to(game.players.black).emit('gameStart', {
+          yourNickname: game.nicknames.black,
+          opponentNickname: game.nicknames.red,
+          color: 'black'
+        });
+        io.to(roomId).emit('update', {
+          board: game.board,
+          turn: game.turn,
+          scores: computeScores(game),
+          moveType: null,
+          moveHistory: game.moveHistory
+        });
+        io.to(roomId).emit('timer', { timerRed: 180, timerBlack: 180 });
+        startTimer(roomId);
+      }
+    });
+
+    socket.on('makeMove', (data) => {
+      // data: { from: { row, col }, to: { row, col } }
+      const rooms = [...socket.rooms].filter(r => r !== socket.id);
+      if (!rooms.length) return;
+      const roomId = rooms[0];
+      const game = games[roomId];
+      if (!game) return;
+      const playerColor = game.players.red === socket.id ? 'red' : 'black';
+      if (game.turn !== playerColor) return;
+      const { from, to } = data;
+      if (!isValidMove(game, from, to, playerColor)) return;
+      let moveType = "move";
+      const piece = game.board[from.row][from.col];
+      game.board[to.row][to.col] = piece;
+      game.board[from.row][from.col] = null;
+      // Record move with relative timestamp and current timer values.
+      game.moveHistory.push({
+        player: playerColor,
+        from,
+        to,
+        moveType: null, // will update below
+        timestamp: Math.floor((Date.now() - game.startTime) / 1000),
+        timerRed: game.timerRed,
+        timerBlack: game.timerBlack
+      });
+      if (Math.abs(to.row - from.row) === 2 && Math.abs(to.col - from.col) === 2) {
+        moveType = "capture";
+        const midRow = (from.row + to.row) / 2;
+        const midCol = (from.col + to.col) / 2;
+        const capturedPiece = game.board[midRow][midCol];
+        game.board[midRow][midCol] = null;
+        if (capturedPiece) {
+          if (capturedPiece.color === 'red') {
+            game.capturedForBlack += capturedPiece.row;
+          } else {
+            game.capturedForRed += (7 - capturedPiece.row);
+          }
+        }
+      }
+
       game.moveHistory[game.moveHistory.length - 1].moveType = moveType;
+      if ((playerColor === 'red' && to.row === 0) ||
+        (playerColor === 'black' && to.row === 7)) {
+        moveType = "win";
+        game.moveHistory[game.moveHistory.length - 1].moveType = moveType;
+        const scores = computeScores(game);
+        io.to(roomId).emit('update', {
+          board: game.board,
+          turn: game.turn,
+          scores,
+          moveType,
+          moveHistory: game.moveHistory
+        });
+        io.to(roomId).emit('gameOver', { winner: playerColor, scores, winReason: "Breaching other Side" });
+        writeGameHistory(roomId, game);
+        clearInterval(game.interval);
+        return;
+      }
+      const opponentColor = playerColor === 'red' ? 'black' : 'red';
+      game.turn = opponentColor;
       const scores = computeScores(game);
       io.to(roomId).emit('update', {
         board: game.board,
@@ -310,50 +379,37 @@ io.on('connection', (socket) => {
         moveType,
         moveHistory: game.moveHistory
       });
-      io.to(roomId).emit('gameOver', { winner: playerColor, scores, winReason: "Breaching other Side" });
-      writeGameHistory(roomId, game);
-      clearInterval(game.interval);
-      return;
-    }
-    const opponentColor = playerColor === 'red' ? 'black' : 'red';
-    game.turn = opponentColor;
-    const scores = computeScores(game);
-    io.to(roomId).emit('update', {
-      board: game.board,
-      turn: game.turn,
-      scores,
-      moveType,
-      moveHistory: game.moveHistory
+      console.log("move made");
     });
-    console.log("move made");
-  });
 
-  socket.on('disconnect', () => {
-    console.log('A user disconnected: ' + socket.id);
-    if (waitingPlayer && waitingPlayer.id === socket.id) {
-      waitingPlayer = null;
-    }
-    for (let roomId in games) {
-      const game = games[roomId];
-      if (game.players.red === socket.id || game.players.black === socket.id) {
-        const opponentColor = game.players.red === socket.id ? 'black' : 'red';
-        io.to(roomId).emit('gameOver', { winner: opponentColor, scores: computeScores(game), winReason: "Abandonment" });
-        writeGameHistory(roomId, game);
-        clearInterval(game.interval);
-        delete games[roomId];
+    socket.on('disconnect', () => {
+      console.log('A user disconnected: ' + socket.id);
+      if (waitingPlayer && waitingPlayer.id === socket.id) {
+        waitingPlayer = null;
       }
-    }
-  });
-
-  // Every 10 seconds, broadcast the full list of connected players
-  setInterval(() => {
-    const players = [];
-    // Iterate over all connected sockets in the default namespace.
-    io.of('/').sockets.forEach((socket) => {
-      if (socket.username) {
-        players.push({ username: socket.username });
+      for (let roomId in games) {
+        const game = games[roomId];
+        if (game.players.red === socket.id || game.players.black === socket.id) {
+          const opponentColor = game.players.red === socket.id ? 'black' : 'red';
+          io.to(roomId).emit('gameOver', { winner: opponentColor, scores: computeScores(game), winReason: "Abandonment" });
+          writeGameHistory(roomId, game);
+          clearInterval(game.interval);
+          delete games[roomId];
+        }
       }
     });
-    io.emit('refreshPlayers', players);
-  }, 10000);
+
+  }
 });
+
+
+// Periodic refresh of connected players every 10 seconds.
+setInterval(() => {
+  const players = [];
+  io.of('/').sockets.forEach((socket) => {
+    if (socket.username) {
+      players.push({ username: socket.username });
+    }
+  });
+  io.emit('refreshPlayers', players);
+}, 10000);

@@ -1,0 +1,212 @@
+[
+  {
+    "player": "red",
+    "from": {
+      "row": 5,
+      "col": 4
+    },
+    "to": {
+      "row": 4,
+      "col": 4
+    },
+    "moveType": "move",
+    "timestamp": 8,
+    "timerRed": 178,
+    "timerBlack": 180
+  },
+  {
+    "player": "black",
+    "from": {
+      "row": 2,
+      "col": 3
+    },
+    "to": {
+      "row": 3,
+      "col": 3
+    },
+    "moveType": "move",
+    "timestamp": 10,
+    "timerRed": 178,
+    "timerBlack": 177
+  },
+  {
+    "player": "red",
+    "from": {
+      "row": 4,
+      "col": 4
+    },
+    "to": {
+      "row": 2,
+      "col": 2
+    },
+    "moveType": "capture",
+    "timestamp": 13,
+    "timerRed": 175,
+    "timerBlack": 177
+  },
+  {
+    "player": "black",
+    "from": {
+      "row": 1,
+      "col": 3
+    },
+    "to": {
+      "row": 3,
+      "col": 1
+    },
+    "moveType": "capture",
+    "timestamp": 16,
+    "timerRed": 175,
+    "timerBlack": 175
+  },
+  {
+    "player": "red",
+    "from": {
+      "row": 5,
+      "col": 3
+    },
+    "to": {
+      "row": 4,
+      "col": 3
+    },
+    "moveType": "move",
+    "timestamp": 19,
+    "timerRed": 172,
+    "timerBlack": 175
+  },
+  {
+    "player": "black",
+    "from": {
+      "row": 3,
+      "col": 1
+    },
+    "to": {
+      "row": 4,
+      "col": 1
+    },
+    "moveType": "move",
+    "timestamp": 80,
+    "timerRed": 172,
+    "timerBlack": 113
+  },
+  {
+    "player": "red",
+    "from": {
+      "row": 4,
+      "col": 3
+    },
+    "to": {
+      "row": 4,
+      "col": 2
+    },
+    "moveType": "move",
+    "timestamp": 86,
+    "timerRed": 166,
+    "timerBlack": 113
+  },
+  {
+    "player": "black",
+    "from": {
+      "row": 4,
+      "col": 1
+    },
+    "to": {
+      "row": 4,
+      "col": 0
+    },
+    "moveType": "move",
+    "timestamp": 89,
+    "timerRed": 166,
+    "timerBlack": 110
+  },
+  {
+    "player": "red",
+    "from": {
+      "row": 4,
+      "col": 2
+    },
+    "to": {
+      "row": 3,
+      "col": 2
+    },
+    "moveType": "move",
+    "timestamp": 93,
+    "timerRed": 163,
+    "timerBlack": 110
+  },
+  {
+    "player": "black",
+    "from": {
+      "row": 4,
+      "col": 0
+    },
+    "to": {
+      "row": 5,
+      "col": 0
+    },
+    "moveType": "move",
+    "timestamp": 96,
+    "timerRed": 163,
+    "timerBlack": 106
+  },
+  {
+    "player": "red",
+    "from": {
+      "row": 3,
+      "col": 2
+    },
+    "to": {
+      "row": 2,
+      "col": 2
+    },
+    "moveType": "move",
+    "timestamp": 100,
+    "timerRed": 160,
+    "timerBlack": 106
+  },
+  {
+    "player": "black",
+    "from": {
+      "row": 5,
+      "col": 0
+    },
+    "to": {
+      "row": 6,
+      "col": 0
+    },
+    "moveType": "move",
+    "timestamp": 103,
+    "timerRed": 160,
+    "timerBlack": 102
+  },
+  {
+    "player": "red",
+    "from": {
+      "row": 2,
+      "col": 2
+    },
+    "to": {
+      "row": 2,
+      "col": 1
+    },
+    "moveType": "move",
+    "timestamp": 105,
+    "timerRed": 158,
+    "timerBlack": 102
+  },
+  {
+    "player": "black",
+    "from": {
+      "row": 6,
+      "col": 0
+    },
+    "to": {
+      "row": 7,
+      "col": 0
+    },
+    "moveType": "win",
+    "timestamp": 108,
+    "timerRed": 158,
+    "timerBlack": 100
+  }
+]

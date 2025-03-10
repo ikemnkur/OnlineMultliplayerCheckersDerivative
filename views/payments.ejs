@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>Payments</title>
+  <style>
+    /* Basic Styles */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f9f9f9;
+      color: #333;
+      text-align: center;
+    }
+
+    header {
+      background: #3498db;
+      color: #fff;
+      padding: 2rem 1rem;
+      margin-bottom: 2rem;
+    }
+
+    header h1 {
+      margin: 0 0 0.5rem;
+    }
+
+    header p {
+      font-size: 1.1rem;
+      margin: 0;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 1rem;
+      text-align: left;
+    }
+
+    /* Navigation (optional) */
+    nav {
+      margin: 1rem 0;
+      text-align: center;
+    }
+
+    nav a {
+      display: inline-block;
+      margin: 0 1rem;
+      padding: 0.75rem 1.5rem;
+      text-decoration: none;
+      color: #fff;
+      background: #2ecc71;
+      border-radius: 4px;
+      transition: background 0.3s ease;
+    }
+
+    nav a:hover {
+      background: #27ae60;
+    }
+
+    /* Form Styling */
+    form {
+      margin-bottom: 2rem;
+    }
+
+    form div {
+      margin-bottom: 1rem;
+    }
+
+    form label {
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+
+    form input,
+    form select {
+      width: 100%;
+      padding: 8px;
+      box-sizing: border-box;
+    }
+
+    button {
+      padding: 10px 20px;
+      background: #4285f4;
+      border: none;
+      color: #fff;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    /* Table Styling */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 2rem;
+    }
+
+    table,
+    th,
+    td {
+      border: 1px solid #ccc;
+    }
+
+    th,
+    td {
+      padding: 10px;
+      text-align: left;
+    }
+
+    /* Footer */
+    footer {
+      background: #333;
+      color: #fff;
+      padding: 10px;
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Payments</h1>
+    <p>Log and view your payments</p>
+  </header>
+
+  <div class="container">
+    <!-- Optional Navigation Bar -->
+    <nav>
+      <a href="/lobby">Go to Lobby</a>
+      <a href="/dashboard">Go back to Dashboard</a>
+      <a href="/profile">Go to Profile</a>
+    </nav>
+
+    <h2>Log a Payment</h2>
+    <form id="paymentForm">
+      <p>
+        Payments are made manually via crypto. In order to ensure that payment made recorded and accounted for securely
+        please log the crypto transaction details in the form below.
+        Limit 1 order per account per day.
+      </p>
+
+      <p>Please send the coins to one of the following addresses:</p>
+      <!-- Table with crypto addresses and prices -->
+      <table>
+        <thead>
+          <tr>
+            <th>Crypto</th>
+            <th>Address</th>
+            <th>Price (USD)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Litecoin (LTC)</td>
+            <td>ltc_address_example</td>
+            <td id="price-LTC"></td>
+          </tr>
+          <tr>
+            <td>Bitcoin (BTC)</td>
+            <td>btc_address_example</td>
+            <td id="price-BTC"></td>
+          </tr>
+          <tr>
+            <td>Ethereum (ETH)</td>
+            <td>eth_address_example</td>
+            <td id="price-ETH"></td>
+          </tr>
+          <tr>
+            <td>Solana (SOL)</td>
+            <td>sol_address_example</td>
+            <td id="price-SOL"></td>
+          </tr>
+          <tr>
+            <td>Monero (XMR)</td>
+            <td>xmr_address_example</td>
+            <td id="price-XMR"></td>
+          </tr>
+        </tbody>
+      </table>
+      <br>
+      <div>
+        <label for="numberOfCoins">Number of Coins:</label>
+        <!-- Set default to 100 -->
+        <input type="number" name="coins" id="numberOfCoins" value="100" required>
+      </div>
+      <div>
+        <label for="paymentType">Crypto Payment Type:</label>
+        <select name="paymentType" id="paymentType" required>
+          <option value="LTC">Litecoin</option>
+          <option value="BTC">Bitcoin</option>
+          <option value="ETH">Ethereum</option>
+          <option value="SOL">Solana</option>
+          <option value="XMR">Monero</option>
+        </select>
+      </div>
+      <!-- Conversion rates applet -->
+      <div>
+        <p>Conversion details:</p>
+        <div id="conversionRates">
+          <!-- The conversion details will be displayed here -->
+          <p>Enter an amount in crypto to see conversion.</p>
+        </div>
+      </div>
+
+      <div>
+        <label for="amount">Amount (in $Crypto):</label>
+        <input type="number" name="amount" id="amount" step="any" required>
+      </div>
+      <div>
+        <label for="time">Time (UTC):</label>
+        <a href="https://www.utctime.net/">Look up UTC: Coordinated Universal Time</a>
+        <input type="text" name="time" id="time" required>
+      </div>
+      <div>
+        <label for="transactionId">Transaction ID:</label>
+        <input type="text" name="transactionId" id="transactionId" required>
+      </div>
+      <div>
+        <button type="submit">Log Payment</button>
+      </div>
+    </form>
+
+    <h2>Previous Payments</h2>
+    <table>
+      <tr>
+        <th>ID</th>
+        <th>Type</th>
+        <th>Amount</th>
+        <th>Currency</th>
+        <th>Status</th>
+        <th>Date</th>
+      </tr>
+      <% if (payments && payments.length > 0) { %>
+        <% payments.forEach(function(payment) { %>
+          <tr>
+            <td><%= payment.id %></td>
+            <td><%= payment.type %></td>
+            <td><%= payment.amount %></td>
+            <td><%= payment.currency %></td>
+            <td><%= payment.status %></td>
+            <td><%= payment.created_at %></td>
+          </tr>
+        <% }); %>
+      <% } else { %>
+        <tr>
+          <td colspan="6">No payments found.</td>
+        </tr>
+      <% } %>
+    </table>
+  </div>
+
+  <footer>
+    <p>&copy; 2025 Derivative Checkers. All rights reserved.</p>
+  </footer>
+
+  <script>
+    // Map for cryptocurrency IDs used by CoinGecko API
+    const currencyIdMap = {
+      BTC: 'bitcoin',
+      LTC: 'litecoin',
+      SOL: 'solana',
+      ETH: 'ethereum',
+      XMR: 'monero',
+    };
+
+    // Initialize conversionRates as an empty object
+    let conversionRates = {};
+
+    // Async function to fetch the USD rate for a given cryptocurrency
+    const fetchRate = async (currency) => {
+      try {
+        const currencyId = currencyIdMap[currency];
+        const response = await fetch(
+          `https://api.coingecko.com/api/v3/simple/price?ids=${currencyId}&vs_currencies=usd`
+        );
+        const data = await response.json();
+        return data[currencyId].usd;
+      } catch (error) {
+        console.error('Error fetching crypto rates:', error);
+        return null;
+      }
+    };
+
+    // Cost per coin in USD
+    const coinCostUSD = 0.01;
+
+    // Update the conversion details based on selected crypto and the crypto amount entered
+    function updateConversionRate() {
+      const paymentTypeSelect = document.getElementById('paymentType');
+      const selectedCrypto = paymentTypeSelect.value;
+      const rateDisplay = document.getElementById('conversionRates');
+      const cryptoAmount = parseFloat(document.getElementById('amount').value);
+
+      if (isNaN(cryptoAmount)) {
+        rateDisplay.innerHTML = '<p>Please enter a valid crypto amount.</p>';
+        return;
+      }
+
+      if (!conversionRates[selectedCrypto]) {
+        rateDisplay.innerHTML = '<p>Rate not available. Please try again later.</p>';
+        return;
+      }
+
+      const usdValue = cryptoAmount * conversionRates[selectedCrypto];
+      const coinsPurchased = usdValue / coinCostUSD;
+      rateDisplay.innerHTML = '<p>' +
+        'You entered ' + cryptoAmount + ' ' + selectedCrypto + '.<br>' +
+        'This is equivalent to $' + usdValue.toFixed(2) + ' USD,<br>' +
+        'which will purchase approximately ' + coinsPurchased.toFixed(0) + ' coins (at $' + coinCostUSD.toFixed(2) + ' per coin).' +
+        '</p>';
+    }
+
+    // Update the crypto prices in the addresses table (third column)
+    function updateCryptoPrices() {
+      for (const crypto in conversionRates) {
+        const priceCell = document.getElementById('price-' + crypto);
+        if (priceCell && conversionRates[crypto]) {
+          priceCell.innerText = '$' + conversionRates[crypto].toFixed(2);
+        }
+      }
+    }
+
+    // Async function to update all conversion rates
+    async function updateRates() {
+      const currencies = Object.keys(currencyIdMap);
+      for (const currency of currencies) {
+        const rate = await fetchRate(currency);
+        if (rate !== null) {
+          conversionRates[currency] = rate;
+        }
+      }
+      updateCryptoPrices();
+      updateConversionRate();
+      updateCryptoAmountFromCoins();
+    }
+
+    // Update the "amount" input based on the number of coins input
+    function updateCryptoAmountFromCoins() {
+      const coins = parseFloat(document.getElementById('numberOfCoins').value);
+      if (isNaN(coins)) return;
+      const paymentTypeSelect = document.getElementById('paymentType');
+      const selectedCrypto = paymentTypeSelect.value;
+      if (!conversionRates[selectedCrypto]) return;
+      const cryptoAmount = (coins * coinCostUSD) / conversionRates[selectedCrypto];
+      document.getElementById('amount').value = cryptoAmount.toFixed(8);
+      updateConversionRate();
+    }
+
+    // Intercept form submission to use fetch instead of reloading the page
+    document.getElementById('paymentForm').addEventListener('submit', async function (e) {
+      e.preventDefault(); // Prevent the default form submission
+
+      const formData = new FormData(this);
+      // Create an object from the form data
+      const data = {
+        paymentType: formData.get('paymentType'),
+        amount: formData.get('amount'),
+        coins: formData.get('coins'),
+        time: formData.get('time'),
+        transactionId: formData.get('transactionId')
+      };
+
+      try {
+        const response = await fetch('/payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          // Popup message on successful logging
+          alert(result.message || 'Payment logged successfully.');
+          // Optionally, reset the form or update the UI as needed.
+        } else {
+          alert(result.message || 'Payment logging failed.');
+        }
+      } catch (error) {
+        console.error('Error submitting payment:', error);
+        alert('Payment logging failed due to an error.');
+      }
+    });
+
+    // Event listener for changes in the crypto payment type select element
+    document.getElementById('paymentType').addEventListener('change', function () {
+      updateConversionRate();
+      updateCryptoAmountFromCoins();
+    });
+    // Event listener for changes in the amount input field
+    document.getElementById('amount').addEventListener('input', updateConversionRate);
+    // Event listener for changes in the number of coins input field
+    document.getElementById('numberOfCoins').addEventListener('input', updateCryptoAmountFromCoins);
+
+    // Initialize conversion rates and update prices on page load
+    window.addEventListener('DOMContentLoaded', function () {
+      updateRates();
+    });
+  </script>
+</body>
+
+</html>

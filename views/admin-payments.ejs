@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Admin - Payment Management</title>
+  <style>
+    /* Basic Styles */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f9f9f9;
+      color: #333;
+      text-align: center;
+    }
+    header {
+      background: #3498db;
+      color: #fff;
+      padding: 2rem 1rem;
+      margin-bottom: 2rem;
+    }
+    header h1 {
+      margin: 0;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 1rem;
+      text-align: left;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1rem;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+    }
+    th {
+      background: #eee;
+    }
+    button {
+      padding: 5px 10px;
+      margin: 0 2px;
+      cursor: pointer;
+    }
+    .approve-btn {
+      background: #2ecc71;
+      border: none;
+      color: #fff;
+      border-radius: 4px;
+    }
+    .reject-btn {
+      background: #e74c3c;
+      border: none;
+      color: #fff;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Admin - Payment Management</h1>
+  </header>
+  <div class="container">
+    <h2>Logged Payments</h2>
+    <table id="paymentsTable">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>User ID</th>
+          <th>Type</th>
+          <th>Amount</th>
+          <th>Currency</th>
+          <th>Status</th>
+          <th>Date</th>
+          <th>UTC</th>
+          <th>Transaction ID</th>
+          <th>Coins</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (payments && payments.length > 0) { %>
+          <% payments.forEach(function(payment) { %>
+            <tr id="payment-<%= payment.id %>">
+              <td><%= payment.id %></td>
+              <td><%= payment.user_id %></td>
+              <td><%= payment.type %></td>
+              <td><%= payment.amount %></td>
+              <td><%= payment.currency %></td>
+              <td class="status"><%= payment.status %></td>
+              <td><%= payment.created_at %></td>
+              <td><%= payment.utc %></td>
+              <td><%= payment.transactionID %></td>
+              <td><%= payment.numberOfCoins %></td>
+              <td>
+                <% if (payment.status === 'pending') { %>
+                  <button class="approve-btn" data-id="<%= payment.id %>" data-action="approved">Approve</button>
+                  <button class="reject-btn" data-id="<%= payment.id %>" data-action="rejected">Reject</button>
+                <% } else { %>
+                  N/A
+                <% } %>
+              </td>
+            </tr>
+          <% }); %>
+        <% } else { %>
+          <tr>
+            <td colspan="11">No payments found.</td>
+          </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+  <script>
+    // Attach click event listeners to all approve and reject buttons.
+    document.querySelectorAll('.approve-btn, .reject-btn').forEach(button => {
+      button.addEventListener('click', async function() {
+        const paymentId = this.getAttribute('data-id');
+        const action = this.getAttribute('data-action'); // "approved" or "rejected"
+        try {
+          const response = await fetch('/admin/payment/' + paymentId, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action })
+          });
+          const result = await response.json();
+          if (response.ok) {
+            // Update the row's status in the table.
+            const row = document.getElementById('payment-' + paymentId);
+            row.querySelector('.status').innerText = action;
+            // Remove buttons once action is taken.
+            row.querySelector('td:last-child').innerText = 'N/A';
+            alert(result.message || 'Payment updated successfully.');
+          } else {
+            alert(result.message || 'Failed to update payment.');
+          }
+        } catch (error) {
+          console.error('Error updating payment:', error);
+          alert('Error updating payment.');
+        }
+      });
+    });
+  </script>
+</body>
+</html>

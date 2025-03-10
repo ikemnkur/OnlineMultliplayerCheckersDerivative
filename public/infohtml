@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>About - The Caps Game</title>
+  <link rel="stylesheet" href="info.css">
+</head>
+<body>
+  <div class="container">
+    <h1>About The Caps Game</h1>
+    <p>Welcome to the The Caps Game, an online multiplayer experience with a unique twist on classic checkers.</p>
+    
+    <h2>How to Play</h2>
+    <ul>
+      <li>The board is 8×8 with a custom formation: 6 pieces in the back row, 4 in the middle, and 2 in the top row placed on specific columns.</li>
+      <li>Pieces can move sideways and forward, and diagonal moves allow for capturing opponent pieces.</li>
+      <li>A win is achieved when a piece reaches the opponent's side or based on other in-game conditions.</li>
+      <li>Each player has a 3-minute chess-like timer.</li>
+      <li>Players must confirm their readiness before the game starts.</li>
+      <li>All moves are recorded with timestamps to allow for game review and replay.</li>
+    </ul>
+
+    <h2>Features</h2>
+    <ul>
+      <li>Real-time multiplayer gameplay using Socket.IO.</li>
+      <li>Comprehensive move history with options for review and preview modes.</li>
+      <li>Local storage of player statistics such as wins, losses, and average time per game.</li>
+      <li>A dedicated lobby page for viewing online players and their stats.</li>
+    </ul>
+    
+    <p>Challenge your friends and enjoy this fresh take on a classic game!</p>
+    <a href="index.html">Back to Game</a>
+  </div>
+</body>
+</html>

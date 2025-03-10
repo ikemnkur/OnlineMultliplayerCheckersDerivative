@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Your Profile</title>
+  <style>
+    /* Basic Styles (matching Dashboard style) */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f9f9f9;
+      color: #333;
+      text-align: center;
+    }
+    header {
+      background: #3498db;
+      color: #fff;
+      padding: 2rem 1rem;
+      margin-bottom: 2rem;
+    }
+    header h1 {
+      margin: 0 0 0.5rem;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 1rem;
+      text-align: left;
+    }
+    nav {
+      margin: 1rem 0;
+      text-align: center;
+    }
+    nav a, .logout-btn {
+      display: inline-block;
+      margin: 0 1rem;
+      padding: 0.75rem 1.5rem;
+      text-decoration: none;
+      color: #fff;
+      background: #2ecc71;
+      border-radius: 4px;
+      transition: background 0.3s ease;
+      cursor: pointer;
+    }
+    nav a:hover, .logout-btn:hover {
+      background: #27ae60;
+    }
+    .profile-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+      background: #fff;
+      padding: 20px;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .profile-pic {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: #ccc;
+      margin-right: 20px;
+      object-fit: cover;
+    }
+    .profile-details {
+      flex: 1;
+    }
+    .profile-field {
+      margin-bottom: 10px;
+    }
+    .profile-field label {
+      font-weight: bold;
+      display: inline-block;
+      width: 130px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background: #fff;
+      border-radius: 5px;
+      overflow: hidden;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    table, th, td {
+      border: 1px solid #ccc;
+    }
+    th, td {
+      padding: 10px;
+      text-align: left;
+    }
+    tr:hover {
+      background-color: #f1f1f1;
+      cursor: pointer;
+    }
+    /* Chart container styling */
+    #chartContainer {
+      margin-top: 30px;
+      padding: 20px;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      display: none;
+    }
+    footer {
+      background: #333;
+      color: #fff;
+      padding: 10px;
+      text-align: center;
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+    }
+  </style>
+  <!-- Include Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <header>
+    <h1>The Caps Game</h1>
+    <p>A checkers/chess like game!</p>
+  </header>
+  
+  <div class="container">
+    <!-- Navigation & Logout -->
+    <div style="text-align: right;">
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+    <nav>
+      <a href="/dashboard">Dashboard</a>
+      <a href="/lobby">Lobby</a>
+      <a href="/payments">Buy Coins</a>
+    </nav>
+
+    <h1>Your Profile</h1>
+    <div class="profile-header">
+      <!-- Profile Picture -->
+      <img src="<%= profile.picture || 'https://via.placeholder.com/120' %>" alt="Profile Picture" class="profile-pic">
+      <div class="profile-details">
+        <div class="profile-field">
+          <label>Username:</label>
+          <span><%= profile.username %></span>
+        </div>
+        <div class="profile-field">
+          <label>Email:</label>
+          <span><%= profile.email %></span>
+        </div>
+        <div class="profile-field">
+          <label>Date of Birth:</label>
+          <span><%= new Date(profile.date_of_birth).toLocaleDateString() %></span>
+        </div>
+        <div class="profile-field">
+          <label>Last Login:</label>
+          <span><%= profile.last_login ? new Date(profile.last_login).toLocaleString() : "Never" %></span>
+        </div>
+      </div>
+    </div>
+    <div class="profile-details">
+      <div class="profile-field">
+        <label>ELO Score:</label>
+        <span><%= profile.elo_score %></span>
+      </div>
+      <div class="profile-field">
+        <label>XP:</label>
+        <span><%= profile.xp %></span>
+      </div>
+      <div class="profile-field">
+        <label>Games Won:</label>
+        <span><%= profile.games_won %></span>
+      </div>
+      <div class="profile-field">
+        <label>Games Draw:</label>
+        <span><%= profile.games_draw %></span>
+      </div>
+      <div class="profile-field">
+        <label>Games Lost:</label>
+        <span><%= profile.games_lost %></span>
+      </div>
+      <div class="profile-field">
+        <label>Coins:</label>
+        <span><%= profile.coins %></span>
+      </div>
+      <div class="profile-field">
+        <label>Member Since:</label>
+        <span><%= new Date(profile.created_at).toLocaleDateString() %></span>
+      </div>
+    </div>
+
+    <h2>Game Stats</h2>
+    <table id="gameStatsTable">
+      <thead>
+        <tr>
+          <th>Game ID</th>
+          <th>Result</th>
+          <th>Score</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Fake game stats data -->
+        <tr data-gameid="1">
+          <td>1</td>
+          <td>Win</td>
+          <td>1500</td>
+          <td>2025-02-01</td>
+        </tr>
+        <tr data-gameid="2">
+          <td>2</td>
+          <td>Loss</td>
+          <td>1200</td>
+          <td>2025-02-05</td>
+        </tr>
+        <tr data-gameid="3">
+          <td>3</td>
+          <td>Draw</td>
+          <td>1350</td>
+          <td>2025-02-10</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Hidden chart container -->
+    <div id="chartContainer">
+      <h3>Historical Performance</h3>
+      <canvas id="lineChart" width="600" height="400"></canvas>
+    </div>
+  </div>
+
+  <footer>
+    <p>&copy; 2025 The Caps. All rights reserved.</p>
+  </footer>
+
+  <script>
+    // Logout function: clear local storage and redirect to /logout
+    function logout() {
+      localStorage.clear();
+      window.location.href = "/logout";
+    }
+
+    // Fake historical data for the chart
+    const fakeChartData = {
+      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+      datasets: [{
+        label: 'Performance',
+        data: [1200, 1300, 1250, 1400, 1350, 1500],
+        fill: false,
+        borderColor: 'rgb(75, 192, 192)',
+        tension: 0.1
+      }]
+    };
+
+    let chartInstance;
+
+    // Render or update the chart for the given game ID (for fake data, gameId is not used)
+    function renderChart(gameId) {
+      const ctx = document.getElementById('lineChart').getContext('2d');
+      if (chartInstance) {
+        chartInstance.destroy();
+      }
+      chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: fakeChartData,
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'top',
+            },
+            title: {
+              display: true,
+              text: 'Historical Performance for Game ' + gameId
+            }
+          }
+        }
+      });
+      document.getElementById('chartContainer').style.display = 'block';
+    }
+
+    // Add click event listeners to table rows to trigger the chart update
+    document.querySelectorAll('#gameStatsTable tbody tr').forEach(row => {
+      row.addEventListener('click', function() {
+        const gameId = this.getAttribute('data-gameid');
+        renderChart(gameId);
+      });
+    });
+  </script>
+</body>
+</html>

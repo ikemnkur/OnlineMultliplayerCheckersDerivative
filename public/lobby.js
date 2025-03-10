@@ -17,10 +17,10 @@ const searchBar = document.getElementById('searchBar');
 const sortButtons = document.querySelectorAll('#sortFilters button');
 
 // Ask for username (replace with proper login if needed)
-let username = localStorage.getItem("username")
+let username = localStorage.getItem("ombgUsername")
 if(username == null){
   username = prompt("Enter your username for the lobby:") || "Anonymous";
-  localStorage.setItem("username", username)
+  localStorage.setItem("ombgUsername", username)
 }
 
 

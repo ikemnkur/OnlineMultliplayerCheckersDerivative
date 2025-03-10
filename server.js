@@ -16,23 +16,23 @@ app.get('/game', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'game.html'));
 });
 
-// this page is reservred the site new, videos, events, intro, player dashboard.
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+// // this page is reservred the site new, videos, events, intro, player dashboard.
+// app.get('/', (req, res) => {
+//   res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// });
 
-// New routes for login, sign-up, and info pages
-app.get('/login', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'login.html'));
-});
+// // New routes for login, sign-up, and info pages
+// app.get('/login', (req, res) => {
+//   res.sendFile(path.join(__dirname, 'public', 'login.html'));
+// });
 
-app.get('/signup', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'signup.html'));
-});
+// app.get('/signup', (req, res) => {
+//   res.sendFile(path.join(__dirname, 'public', 'signup.html'));
+// });
 
-app.get('/info', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'info.html'));
-});
+// app.get('/info', (req, res) => {
+//   res.sendFile(path.join(__dirname, 'public', 'info.html'));
+// });
 
 // NEW: Routing for the lobby page
 app.get('/lobby', (req, res) => {
@@ -121,11 +121,11 @@ function writeGameHistory(roomId, game) {
   const directory = path.join(__dirname, 'public', 'game_history');
   // Ensure the directory exists.
   fs.mkdirSync(directory, { recursive: true });
-  
+
   // Create a filename using a template literal.
   const filename = path.join(directory, `game_history_${roomId.replace('#', '_')}_${Date.now()}.json`);
   const data = JSON.stringify(game.moveHistory, null, 2);
-  
+
   fs.writeFile(filename, data, (err) => {
     if (err) {
       console.error("Error writing game history file:", err);
@@ -413,3 +413,361 @@ setInterval(() => {
   });
   io.emit('refreshPlayers', players);
 }, 10000);
+
+
+
+// ##############################################################################################################################################################################################
+
+// Add this at the top along with your other requires:
+const jwt = require('jsonwebtoken');
+const JWT_SECRET = 'your_jwt_secret';  // Change this to a secure secret in production
+
+
+// app.js
+// const express = require('express');
+const session = require('express-session');
+const mysql = require('mysql2');
+// const path =  require("path")
+// Using bcryptjs to avoid native build issues
+const bcrypt = require('bcryptjs');
+const bodyParser = require('body-parser');
+
+// const app = express();
+
+// Set up EJS for templating
+app.set('view engine', 'ejs');
+
+// Update the below details with your own MySQL connection details
+const pool = mysql.createConnection({
+  host: '34.68.5.170',
+  user: 'remote',
+  password: 'Password!*',
+  database: 'OMBG',
+  multipleStatements: true
+});
+
+// Middleware
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(express.json());
+app.use(session({
+  secret: 'your_secret_key',
+  resave: false,
+  saveUninitialized: true
+}));
+
+
+const cookieParser = require('cookie-parser');
+app.use(cookieParser());
+
+
+// Serve static files from the 'public' directory
+app.use(express.static(path.join(__dirname, 'public')));
+
+// --- Routes ---
+
+// Landing Page Route
+app.get('/', (req, res) => {
+  res.render('index');
+});
+
+// info Page Route
+app.get('/info', (req, res) => {
+  res.render('info');
+});
+
+app.get('/register', (req, res) => {
+  res.render('register');
+});
+
+app.post('/register', async (req, res) => {
+  const { username, email, date_of_birth, password } = req.body;
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    pool.query(
+      'INSERT INTO users (username, email, date_of_birth, password) VALUES (?, ?, ?, ?)',
+      [username, email, date_of_birth, hashedPassword],
+      (err, results) => {
+        if (err) {
+          console.error(err);
+          return res.send('Registration failed.');
+        }
+        res.redirect('/login');
+      }
+    );
+  } catch (error) {
+    console.error(error);
+    res.send('Error processing registration.');
+  }
+});
+
+app.get('/login', (req, res) => {
+  res.render('login');
+});
+
+app.post('/login', (req, res) => {
+  const { username, password } = req.body;
+  pool.query(
+    'SELECT * FROM users WHERE username = ?',
+    [username],
+    async (err, results) => {
+      if (err) {
+        console.error(err);
+        return res.send('Login failed.');
+      }
+      if (results.length > 0) {
+        const user = results[0];
+        const match = await bcrypt.compare(password, user.password);
+        if (match) {
+          // Sign a JWT with the user's id and username
+          const token = jwt.sign(
+            { id: user.id, username: user.username },
+            JWT_SECRET,
+            { expiresIn: '7d' }
+          );
+          // Send the token as an HTTP-only cookie
+          res.cookie('token', token, { httpOnly: true });
+          return res.redirect('/dashboard');
+        } else {
+          return res.send('Invalid credentials.');
+        }
+      }
+      return res.send('User not found.');
+    }
+  );
+});
+
+// -------------------- AUTHENTICATION MIDDLEWARE --------------------
+
+// function authenticateToken(req, res, next) {
+//   // Check for token in Authorization header or cookie.
+//   const authHeader = req.headers['authorization'];
+//   const token = authHeader && authHeader.split(' ')[1] || req.cookies.token;
+//   if (!token) return res.status(401).json({ error: 'Not logged in' });
+//   jwt.verify(token, JWT_SECRET, (err, user) => {
+//     if (err) return res.status(403).json({ error: 'Invalid token' });
+//     req.user = user;
+//     next();
+//   });
+// }
+
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = (authHeader && authHeader.split(' ')[1]) || (req.cookies && req.cookies.token);
+  if (!token) return res.status(401).json({ error: 'Not logged in' });
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) return res.status(403).json({ error: 'Invalid token' });
+    req.user = user;
+    next();
+  });
+}
+
+
+// -------------------- PROTECTED ROUTES --------------------
+
+// Dashboard (user-specific transaction history)
+app.get('/dashboard', authenticateToken, (req, res) => {
+  // if (!req.session.user) return res.redirect('/login');
+  pool.query(
+    'SELECT username, email, date_of_birth, last_login, elo_score, xp, games_won, games_draw, games_lost, coins, created_at FROM users WHERE id = ?',
+    [req.user.id],
+    (err, results) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      if (results.length === 0) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      // Pass the user and transactions to the dashboard view
+      res.render('dashboard', { user: results[0] });
+    }
+  );
+});
+
+
+app.get('/profile', authenticateToken, (req, res) => {
+  pool.query(
+    'SELECT username, email, date_of_birth, last_login, elo_score, xp, games_won, games_draw, games_lost, coins, created_at FROM users WHERE id = ?',
+    [req.user.id],
+    (err, results) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      if (results.length === 0) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      res.render('profile', { profile: results[0] });
+    }
+  );
+});
+
+// Log in-app purchases / crypto payments
+app.post('/payment', authenticateToken, (req, res) => {
+  const { paymentType, amount, coins, time, transactionId } = req.body;
+  // Insert into transactions table with the new mappings.
+  pool.query(
+    `INSERT INTO transactions 
+      (user_id, type, amount, currency, status, utc, transactionID, numberOfCoins) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [req.user.id, "payment", amount, paymentType, "pending", time, transactionId, coins],
+    (err, results) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ message: 'Payment logging failed.' });
+      }
+      res.json({ message: 'Payment logged successfully.' });
+    }
+  );
+});
+
+
+
+// In-app currency exchange between accounts
+app.post('/exchange', authenticateToken, (req, res) => {
+  const { toUserId, amount } = req.body;
+  const fromUserId = req.user.id;
+  // Log the exchange for the sender
+  pool.query(
+    'INSERT INTO transactions (user_id, type, amount, currency, status) VALUES (?, ?, ?, ?, ?)',
+    [fromUserId, 'exchange-out', amount, 'in-app', 'completed'],
+    (err, results) => {
+      if (err) {
+        console.error(err);
+        return res.send('Exchange logging failed.');
+      }
+      // Log the exchange for the recipient
+      pool.query(
+        'INSERT INTO transactions (user_id, type, amount, currency, status) VALUES (?, ?, ?, ?, ?)',
+        [toUserId, 'exchange-in', amount, 'in-app', 'completed'],
+        (err, results) => {
+          if (err) {
+            console.error(err);
+            return res.send('Exchange logging failed for recipient.');
+          }
+          res.send('Exchange logged successfully.');
+        }
+      );
+    }
+  );
+});
+
+// Redemption request form
+app.get('/redeem', authenticateToken, (req, res) => {
+  res.render('redeem');
+});
+
+// Log a redemption request
+app.post('/redeem', authenticateToken, (req, res) => {
+  const { amount } = req.body;
+  pool.query(
+    'INSERT INTO redemption_requests (user_id, amount, status) VALUES (?, ?, ?)',
+    [req.user.id, amount, 'pending'],
+    (err, results) => {
+      if (err) {
+        console.error(err);
+        return res.send('Redemption request failed.');
+      }
+      console.log("Success in loggin payment request")
+      res.send('Redemption request submitted.');
+    }
+  );
+});
+
+// Admin: Review redemption requests
+app.get('/admin/redemptions', authenticateToken, (req, res) => {
+  // In production, you should also check if req.user is an admin.
+  pool.query(
+    'SELECT r.*, u.username FROM redemption_requests r JOIN users u ON r.user_id = u.id',
+    (err, requests) => {
+      if (err) {
+        console.error(err);
+        return res.send('Error fetching redemption requests.');
+      }
+      res.render('admin_redemptions', { requests });
+    }
+  );
+});
+
+// Admin: Update redemption status
+app.post('/admin/redemptions/:id', authenticateToken, (req, res) => {
+  // Again, ensure only admins can access this route.
+  const redemptionId = req.params.id;
+  const { status } = req.body; // e.g., 'approved', 'rejected'
+  pool.query(
+    'UPDATE redemption_requests SET status = ? WHERE id = ?',
+    [status, redemptionId],
+    (err, results) => {
+      if (err) {
+        console.error(err);
+        return res.send('Failed to update redemption request.');
+      }
+      res.send('Redemption request updated.');
+    }
+  );
+});
+
+// GET /payments - Render the payment handling page
+app.get('/payments', authenticateToken, (req, res) => {
+  // Fetch previous payment transactions for the user.
+  pool.query(
+    'SELECT * FROM transactions WHERE user_id = ? AND type IN (?, ?, ?)',
+    [req.user.id, 'purchase', 'crypto', 'subscription'],
+    (err, payments) => {
+      if (err) {
+        console.error(err);
+        return res.send('Error fetching payments.');
+      }
+      res.render('payments', { payments });
+    }
+  );
+});
+
+// Render the admin payments page (ensure only admins can access this route)
+// app.get('/admin/payments', adminAuth, (req, res) => {
+app.get('/admin/payments', authenticateToken, (req, res) => {
+  // Query the database for all payments
+  pool.query('SELECT * FROM transactions ORDER BY created_at DESC', (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send('Server error while retrieving payments.');
+    }
+    // Render the EJS template "admin-payments.ejs", passing the payments data
+    res.render('admin-payments', { payments: results });
+  });
+});
+
+// Endpoint to update payment status (approve or reject)
+// app.post('/admin/payment/:id', adminAuth, (req, res) => {
+// Endpoint to update payment status (approve or reject)
+app.post('/admin/payment/:id', authenticateToken, (req, res) => {
+  const paymentId = req.params.id;
+  const { action } = req.body; // Expect "approved" or "rejected"
+  
+  if (action !== 'approved' && action !== 'rejected') {
+    return res.status(400).json({ message: 'Invalid action.' });
+  }
+  
+  pool.query(
+    'UPDATE transactions SET status = ? WHERE id = ?',
+    [action, paymentId],
+    (err, results) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ message: 'Payment update failed.' });
+      }
+      res.json({ message: 'Payment updated successfully.' });
+    }
+  );
+});
+
+// // Start the server
+// app.listen(PORT, () => {
+//   console.log(`Server running on port: ${PORT}`);
+// });
+
+// Simple logout endpoint for JWT-based authentication
+app.get('/logout', (req, res) => {
+  // Optionally, you can add server-side logic to blacklist the token if needed.
+  res.redirect('/login');
+});

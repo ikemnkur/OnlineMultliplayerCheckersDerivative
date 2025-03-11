@@ -39,6 +39,10 @@ app.get('/lobby', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'lobby.html'));
 });
 
+// NEW: Routing for the Exprimental Study Mode page
+app.get('/study', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'exprimental.html'));
+});
 
 http.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

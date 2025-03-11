@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Experimental Study Mode</title>
+  <link rel="stylesheet" href="experimental.css">
+</head>
+<body>
+  <header>
+    <h1>Experimental Study Mode</h1>
+    <p>Test hypothetical scenarios by moving, adding, or removing pieces freely.</p>
+  </header>
+  <div class="container">
+    <canvas id="expCanvas" width="600" height="600"></canvas>
+    <div id="controls">
+      <fieldset>
+        <legend>Tool</legend>
+        <label>
+          <input type="radio" name="tool" value="move" checked> Move
+        </label>
+        <label>
+          <input type="radio" name="tool" value="add"> Add
+        </label>
+        <label>
+          <input type="radio" name="tool" value="remove"> Remove
+        </label>
+      </fieldset>
+      <div id="pieceColorSelection" style="display: none;">
+        <button id="addRed">Add Red</button>
+        <button id="addBlack">Add Black</button>
+      </div>
+    </div>
+    <div id="scoreArea">
+      <p id="scoreDisplay">Score: N/A</p>
+    </div>
+    <div id="moveHistoryContainer">
+      <h3>Move History</h3>
+      <ul id="moveHistoryList">
+        <!-- Each move is listed here; click an item to reset board to that state -->
+      </ul>
+      <div id="historyNav">
+        <button id="prevMove"><< Previous</button>
+        <button id="nextMove">Next >></button>
+        <button id="autoPlay">Auto Play</button>
+      </div>
+      <div id="externalHistory">
+        <textarea id="historyTextarea" placeholder="Paste move history JSON here..."></textarea>
+        <button id="loadHistory">Load History</button>
+      </div>
+    </div>
+    <div id="bottomControls">
+      <button id="newGameButton">New Game</button>
+      <button id="copyButton">Copy/Share Game</button>
+    </div>
+  </div>
+  <script src="experimental.js"></script>
+</body>
+</html>

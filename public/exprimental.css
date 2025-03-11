@@ -1,0 +1,83 @@
+body {
+  font-family: Arial, sans-serif;
+  background: #f9f9f9;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+}
+header {
+  background: #3498db;
+  color: #fff;
+  padding: 20px;
+}
+.container {
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 0 10px;
+}
+canvas {
+  border: 1px solid #333;
+  background: #fff;
+  margin-bottom: 10px;
+}
+#controls {
+  margin: 10px 0;
+}
+fieldset {
+  border: 1px solid #ccc;
+  padding: 10px;
+  display: inline-block;
+}
+legend {
+  font-weight: bold;
+}
+#pieceColorSelection button {
+  margin: 0 5px;
+  padding: 5px 10px;
+}
+#scoreArea {
+  margin: 10px 0;
+}
+#scoreDisplay {
+  font-size: 18px;
+  font-weight: bold;
+}
+#moveHistoryContainer {
+  background: #eee;
+  padding: 10px;
+  margin-top: 20px;
+  text-align: left;
+}
+#moveHistoryList {
+  list-style: none;
+  padding: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  margin: 0;
+}
+#moveHistoryList li {
+  padding: 5px;
+  border-bottom: 1px solid #ccc;
+  cursor: pointer;
+}
+#historyNav {
+  margin-top: 10px;
+}
+#historyNav button {
+  margin-right: 10px;
+  padding: 5px 10px;
+}
+#externalHistory {
+  margin-top: 10px;
+}
+#externalHistory textarea {
+  width: 100%;
+  height: 100px;
+}
+#bottomControls {
+  margin-top: 10px;
+}
+#bottomControls button {
+  margin: 5px;
+  padding: 8px 12px;
+}

@@ -501,8 +501,9 @@ app.post('/register', async (req, res) => {
 });
 
 app.get('/login', (req, res) => {
-  res.render('login');
+  res.render('login', { error: null });
 });
+
 
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
@@ -512,7 +513,7 @@ app.post('/login', (req, res) => {
     async (err, results) => {
       if (err) {
         console.error(err);
-        return res.send('Login failed.');
+        return res.render('login', { error: 'Login failed. Please try again.' });
       }
       if (results.length > 0) {
         const user = results[0];
@@ -528,10 +529,10 @@ app.post('/login', (req, res) => {
           res.cookie('token', token, { httpOnly: true });
           return res.redirect('/dashboard');
         } else {
-          return res.send('Invalid credentials.');
+          return res.render('login', { error: 'Invalid credentials.' });
         }
       }
-      return res.send('User not found.');
+      return res.render('login', { error: 'User not found.' });
     }
   );
 });
@@ -550,17 +551,34 @@ app.post('/login', (req, res) => {
 //   });
 // }
 
+// function authenticateToken(req, res, next) {
+//   const authHeader = req.headers['authorization'];
+//   const token = (authHeader && authHeader.split(' ')[1]) || (req.cookies && req.cookies.token);
+//   if (!token) {
+//     return res.status(401).json({ error: 'Not logged in' });
+//   }
+//   jwt.verify(token, JWT_SECRET, (err, user) => {
+//     if (err) return res.status(403).json({ error: 'Invalid token' });
+//     req.user = user;
+//     next();
+//   });
+// }
+
+
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = (authHeader && authHeader.split(' ')[1]) || (req.cookies && req.cookies.token);
-  if (!token) return res.status(401).json({ error: 'Not logged in' });
+  if (!token) {
+    return res.redirect('/login');
+  }
   jwt.verify(token, JWT_SECRET, (err, user) => {
-    if (err) return res.status(403).json({ error: 'Invalid token' });
+    if (err) {
+      return res.redirect('/login');
+    }
     req.user = user;
     next();
   });
 }
-
 
 // -------------------- PROTECTED ROUTES --------------------
 

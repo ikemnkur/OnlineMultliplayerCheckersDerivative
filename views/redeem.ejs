@@ -60,10 +60,139 @@
     <form action="/redeem" method="post">
       <div class="form-control">
         <label for="amount">Amount</label>
-        <input type="number" step="0.01" id="amount" name="amount" required>
+        <input type="number" step="1" id="amount" name="amount" required>
       </div>
       <button type="submit">Submit Redemption Request</button>
     </form>
+    <div class="container">
+      <!-- Optional Navigation Bar -->
+      <nav>
+        <a href="/lobby">Go to Lobby</a>
+        <a href="/dashboard">Go back to Dashboard</a>
+        <a href="/profile">Go to Profile</a>
+      </nav>
+  
+      <h2>Log a Payment</h2>
+      <form id="paymentForm">
+        <p>
+          Payments are made manually via crypto. In order to ensure that payment made recorded and accounted for securely
+          please log the crypto transaction details in the form below.
+          Limit 1 order per account per day.
+        </p>
+  
+        <p>Please send the coins to one of the following addresses:</p>
+        <!-- Table with crypto addresses and prices -->
+        <table>
+          <thead>
+            <tr>
+              <th>Crypto</th>
+              <th>Address</th>
+              <th>Price (USD)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Litecoin (LTC)</td>
+              <td>ltc_address_example</td>
+              <td id="price-LTC"></td>
+            </tr>
+            <tr>
+              <td>Bitcoin (BTC)</td>
+              <td>btc_address_example</td>
+              <td id="price-BTC"></td>
+            </tr>
+            <tr>
+              <td>Ethereum (ETH)</td>
+              <td>eth_address_example</td>
+              <td id="price-ETH"></td>
+            </tr>
+            <tr>
+              <td>Solana (SOL)</td>
+              <td>sol_address_example</td>
+              <td id="price-SOL"></td>
+            </tr>
+            <tr>
+              <td>Monero (XMR)</td>
+              <td>xmr_address_example</td>
+              <td id="price-XMR"></td>
+            </tr>
+          </tbody>
+        </table>
+        <br>
+        <div>
+          <label for="numberOfCoins">Number of Coins:</label>
+          <!-- Set default to 100 -->
+          <input type="number" name="coins" id="numberOfCoins" value="100" required>
+        </div>
+        <div>
+          <label for="paymentType">Crypto Payment Type:</label>
+          <select name="paymentType" id="paymentType" required>
+            <option value="LTC">Litecoin</option>
+            <option value="BTC">Bitcoin</option>
+            <option value="ETH">Ethereum</option>
+            <option value="SOL">Solana</option>
+            <option value="XMR">Monero</option>
+          </select>
+        </div>
+        <!-- Conversion rates applet -->
+        <div>
+          <p>Conversion details:</p>
+          <div id="conversionRates">
+            <!-- The conversion details will be displayed here -->
+            <p>Enter an amount in crypto to see conversion.</p>
+          </div>
+        </div>
+  
+        <div>
+          <label for="amount">Amount (in $Crypto):</label>
+          <input type="number" name="amount" id="amount" step="any" required>
+        </div>
+        <div>
+          <label for="time">Time (UTC):</label>
+          <a href="https://www.utctime.net/">Look up UTC: Coordinated Universal Time</a>
+          <input type="text" name="time" id="time" required>
+        </div>
+        <div>
+          <label for="transactionId">Transaction ID:</label>
+          <input type="text" name="transactionId" id="transactionId" required>
+        </div>
+        <div>
+          <button type="submit">Log Payment</button>
+        </div>
+      </form>
+  
+      <h2>Previous Payments</h2>
+      <table>
+        <tr>
+          <th>ID</th>
+          <th>Type</th>
+          <th>Amount</th>
+          <th>Currency</th>
+          <th>Status</th>
+          <th>Date</th>
+        </tr>
+        <% if (payments && payments.length > 0) { %>
+          <% payments.forEach(function(payment) { %>
+            <tr>
+              <td><%= payment.id %></td>
+              <td><%= payment.type %></td>
+              <td><%= payment.amount %></td>
+              <td><%= payment.currency %></td>
+              <td><%= payment.status %></td>
+              <td><%= payment.created_at %></td>
+            </tr>
+          <% }); %>
+        <% } else { %>
+          <tr>
+            <td colspan="6">No payments found.</td>
+          </tr>
+        <% } %>
+      </table>
+    </div>
+  
+    <footer>
+      <p>&copy; 2025 Derivative Checkers. All rights reserved.</p>
+    </footer>
   </div>
 </body>
 </html>

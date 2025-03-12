@@ -32,13 +32,24 @@
       margin: 1rem 0;
       text-align: center;
     }
-    nav a, .logout-btn {
+    nav a {
       display: inline-block;
       margin: 0 1rem;
       padding: 0.75rem 1.5rem;
       text-decoration: none;
       color: #fff;
-      background: #2ecc71;
+      background: #2ecc4e;
+      border-radius: 4px;
+      transition: background 0.3s ease;
+      cursor: pointer;
+    }
+    .logout-btn {
+      display: inline-block;
+      margin: 0 1rem;
+      padding: 0.75rem 1.5rem;
+      text-decoration: none;
+      color: #fff;
+      background: #cc2e2e;
       border-radius: 4px;
       transition: background 0.3s ease;
       cursor: pointer;
@@ -131,6 +142,7 @@
       <a href="/dashboard">Dashboard</a>
       <a href="/lobby">Lobby</a>
       <a href="/payments">Buy Coins</a>
+      <a href="/redeem">Redeem Coins</a>
     </nav>
 
     <h1>Your Profile</h1>
@@ -153,6 +165,10 @@
         <div class="profile-field">
           <label>Last Login:</label>
           <span><%= profile.last_login ? new Date(profile.last_login).toLocaleString() : "Never" %></span>
+        </div>
+        <div class="profile-field">
+          <label>Number Coin:</label>
+          <span><%= profile.coins ? 0 : "None" %></span>
         </div>
       </div>
     </div>

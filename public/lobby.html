@@ -6,7 +6,11 @@
   <link rel="stylesheet" href="lobby.css">
 </head>
 <body>
-  <h1>Game Lobby</h1>
+  <header>
+    <h1>Game Lobby</h1>
+    <p>Look for other players to play against!</p>
+  </header>
+  
   <input type="text" id="searchBar" placeholder="Search players...">
   <div id="sortFilters">
     <button data-sort="username">Sort by Name</button>
@@ -36,5 +40,8 @@
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="lobby.js"></script>
+  <footer>
+    <p>&copy; 2025 The Caps. All rights reserved.</p>
+  </footer>
 </body>
 </html>

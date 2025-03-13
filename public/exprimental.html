@@ -148,6 +148,7 @@
                     << Previous</button>
                         <button id="nextMove">Next >></button>
                         <button id="autoPlay">Auto Play</button>
+                        <button id="clear" style="float: right;">Clear</button>
             </div>
             <div id="externalHistory">
                 <textarea id="historyTextarea" placeholder="Paste move history JSON here..."></textarea>
@@ -164,8 +165,8 @@
         // experimental.js
 
         // Initialize a nickname (for experimental mode, this is just informational)
-        let nickname = prompt("Enter your nickname for experimental mode:");
-        if (!nickname) nickname = "Player";
+        // let nickname = prompt("Enter your nickname for experimental mode:");
+        // if (!nickname) nickname = "Player";
 
         // Global variables
         let board = [];  // current board state (8x8)
@@ -178,6 +179,7 @@
         const prevMoveBtn = document.getElementById('prevMove');
         const nextMoveBtn = document.getElementById('nextMove');
         const autoPlayBtn = document.getElementById('autoPlay');
+        const clearBtn = document.getElementById('clearBtn');
         const newGameBtn = document.getElementById('newGameButton');
         const copyBtn = document.getElementById('copyButton');
         const loadHistoryBtn = document.getElementById('loadHistory');
@@ -402,6 +404,13 @@
                 resetBoardToMove(previewIndex);
             }, 1000);
         });
+
+        clearBtn.addEventListener('click', () => {
+            // if (!previewMode) previewMode = true;
+            moveHistory = [];
+            moveHistoryList.innerHTML = "";
+        });
+
 
         // Load external move history.
         loadHistoryBtn.addEventListener('click', () => {

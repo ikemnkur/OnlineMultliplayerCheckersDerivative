@@ -643,7 +643,21 @@ app.post('/payment', authenticateToken, (req, res) => {
   );
 });
 
-
+// GET /payments - Render the payment handling page
+app.get('/payments', authenticateToken, (req, res) => {
+  // Fetch previous payment transactions for the user.
+  pool.query(
+    'SELECT * FROM transactions WHERE user_id = ? AND type IN (?, ?, ?)',
+    [req.user.id, 'purchase', 'crypto', 'subscription'],
+    (err, payments) => {
+      if (err) {
+        console.error(err);
+        return res.send('Error fetching payments.');
+      }
+      res.render('payments', { payments });
+    }
+  );
+});
 
 // In-app currency exchange between accounts
 app.post('/exchange', authenticateToken, (req, res) => {
@@ -676,7 +690,18 @@ app.post('/exchange', authenticateToken, (req, res) => {
 
 // Redemption request form
 app.get('/redeem', authenticateToken, (req, res) => {
-  res.render('redeem');
+  // res.render('redeem');
+  pool.query(
+    'SELECT * FROM withdraws WHERE user_id = ? AND type IN (?, ?, ?)',
+    [req.user.id, 'purchase', 'crypto', 'subscription'],
+    (err, payments) => {
+      if (err) {
+        console.error(err);
+        return res.send('Error fetching payments.');
+      }
+      res.render('redeem', { redeem });
+    }
+  );
 });
 
 // Log a redemption request
@@ -729,21 +754,7 @@ app.post('/admin/redemptions/:id', authenticateToken, (req, res) => {
   );
 });
 
-// GET /payments - Render the payment handling page
-app.get('/payments', authenticateToken, (req, res) => {
-  // Fetch previous payment transactions for the user.
-  pool.query(
-    'SELECT * FROM transactions WHERE user_id = ? AND type IN (?, ?, ?)',
-    [req.user.id, 'purchase', 'crypto', 'subscription'],
-    (err, payments) => {
-      if (err) {
-        console.error(err);
-        return res.send('Error fetching payments.');
-      }
-      res.render('payments', { payments });
-    }
-  );
-});
+
 
 // Render the admin payments page (ensure only admins can access this route)
 // app.get('/admin/payments', adminAuth, (req, res) => {

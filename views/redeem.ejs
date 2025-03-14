@@ -57,7 +57,7 @@
 <body>
   <div class="container">
     <h1>Redeem Currency</h1>
-    <form action="/redeem" method="post">
+    <form action="/withdraw" method="post">
       <div class="form-control">
         <label for="amount">Amount</label>
         <input type="number" step="1" id="amount" name="amount" required>
@@ -72,17 +72,17 @@
         <a href="/profile">Go to Profile</a>
       </nav>
   
-      <h2>Log a Payment</h2>
-      <form id="paymentForm">
+      <h2>Log a withdraw</h2>
+      <form id="withdrawForm">
         <p>
-          Payments are made manually via crypto. In order to ensure that payment made recorded and accounted for securely
+          withdraws are made manually via crypto. In order to ensure that withdraw made recorded and accounted for securely
           please log the crypto transaction details in the form below.
           Limit 1 order per account per day.
         </p>
   
-        <p>Please send the coins to one of the following addresses:</p>
+        <!-- <p>Please send the coins to one of the following addresses:</p> -->
         <!-- Table with crypto addresses and prices -->
-        <table>
+        <!-- <table>
           <thead>
             <tr>
               <th>Crypto</th>
@@ -117,7 +117,7 @@
               <td id="price-XMR"></td>
             </tr>
           </tbody>
-        </table>
+        </table> -->
         <br>
         <div>
           <label for="numberOfCoins">Number of Coins:</label>
@@ -125,8 +125,8 @@
           <input type="number" name="coins" id="numberOfCoins" value="100" required>
         </div>
         <div>
-          <label for="paymentType">Crypto Payment Type:</label>
-          <select name="paymentType" id="paymentType" required>
+          <label for="withdrawType">Crypto withdraw Type:</label>
+          <select name="withdrawType" id="withdrawType" required>
             <option value="LTC">Litecoin</option>
             <option value="BTC">Bitcoin</option>
             <option value="ETH">Ethereum</option>
@@ -157,11 +157,11 @@
           <input type="text" name="transactionId" id="transactionId" required>
         </div>
         <div>
-          <button type="submit">Log Payment</button>
+          <button type="submit">Log withdraw</button>
         </div>
       </form>
   
-      <h2>Previous Payments</h2>
+      <h2>Previous withdraws</h2>
       <table>
         <tr>
           <th>ID</th>
@@ -171,20 +171,20 @@
           <th>Status</th>
           <th>Date</th>
         </tr>
-        <% if (payments && payments.length > 0) { %>
-          <% payments.forEach(function(payment) { %>
+        <% if (withdraws && withdraws.length > 0) { %>
+          <% withdraws.forEach(function(withdraw) { %>
             <tr>
-              <td><%= payment.id %></td>
-              <td><%= payment.type %></td>
-              <td><%= payment.amount %></td>
-              <td><%= payment.currency %></td>
-              <td><%= payment.status %></td>
-              <td><%= payment.created_at %></td>
+              <td><%= withdraw.id %></td>
+              <td><%= withdraw.type %></td>
+              <td><%= withdraw.amount %></td>
+              <td><%= withdraw.currency %></td>
+              <td><%= withdraw.status %></td>
+              <td><%= withdraw.created_at %></td>
             </tr>
           <% }); %>
         <% } else { %>
           <tr>
-            <td colspan="6">No payments found.</td>
+            <td colspan="6">No withdraws found.</td>
           </tr>
         <% } %>
       </table>

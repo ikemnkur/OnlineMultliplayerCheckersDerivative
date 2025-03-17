@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <meta charset="UTF-8">
   <title>Your Profile</title>
@@ -13,25 +14,30 @@
       color: #333;
       text-align: center;
     }
+
     header {
       background: #3498db;
       color: #fff;
       padding: 2rem 1rem;
       margin-bottom: 2rem;
     }
+
     header h1 {
       margin: 0 0 0.5rem;
     }
+
     .container {
       max-width: 800px;
       margin: 0 auto;
       padding: 0 1rem;
       text-align: left;
     }
+
     nav {
       margin: 1rem 0;
       text-align: center;
     }
+
     nav a {
       display: inline-block;
       margin: 0 1rem;
@@ -43,6 +49,7 @@
       transition: background 0.3s ease;
       cursor: pointer;
     }
+
     .logout-btn {
       display: inline-block;
       margin: 0 1rem;
@@ -54,9 +61,12 @@
       transition: background 0.3s ease;
       cursor: pointer;
     }
-    nav a:hover, .logout-btn:hover {
+
+    nav a:hover,
+    .logout-btn:hover {
       background: #27ae60;
     }
+
     .profile-header {
       display: flex;
       align-items: center;
@@ -64,8 +74,9 @@
       background: #fff;
       padding: 20px;
       border-radius: 5px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     }
+
     .profile-pic {
       width: 120px;
       height: 120px;
@@ -74,17 +85,21 @@
       margin-right: 20px;
       object-fit: cover;
     }
+
     .profile-details {
       flex: 1;
     }
+
     .profile-field {
       margin-bottom: 10px;
     }
+
     .profile-field label {
       font-weight: bold;
       display: inline-block;
       width: 130px;
     }
+
     table {
       width: 100%;
       border-collapse: collapse;
@@ -92,19 +107,26 @@
       background: #fff;
       border-radius: 5px;
       overflow: hidden;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     }
-    table, th, td {
+
+    table,
+    th,
+    td {
       border: 1px solid #ccc;
     }
-    th, td {
+
+    th,
+    td {
       padding: 10px;
       text-align: left;
     }
+
     tr:hover {
       background-color: #f1f1f1;
       cursor: pointer;
     }
+
     /* Chart container styling */
     #chartContainer {
       margin-top: 30px;
@@ -114,6 +136,7 @@
       border-radius: 5px;
       display: none;
     }
+
     footer {
       background: #333;
       color: #fff;
@@ -127,17 +150,16 @@
   <!-- Include Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body>
   <header>
     <h1>The Caps Game</h1>
     <p>A checkers/chess like game!</p>
   </header>
-  
+
   <div class="container">
     <!-- Navigation & Logout -->
-    <div style="text-align: right;">
-      <button class="logout-btn" onclick="logout()">Logout</button>
-    </div>
+
     <nav>
       <a href="/dashboard">Dashboard</a>
       <a href="/lobby">Lobby</a>
@@ -152,54 +174,78 @@
       <div class="profile-details">
         <div class="profile-field">
           <label>Username:</label>
-          <span><%= profile.username %></span>
+          <span>
+            <%= profile.username %>
+          </span>
         </div>
         <div class="profile-field">
           <label>Email:</label>
-          <span><%= profile.email %></span>
+          <span>
+            <%= profile.email %>
+          </span>
         </div>
         <div class="profile-field">
           <label>Date of Birth:</label>
-          <span><%= new Date(profile.date_of_birth).toLocaleDateString() %></span>
+          <span>
+            <%= new Date(profile.date_of_birth).toLocaleDateString() %>
+          </span>
         </div>
         <div class="profile-field">
           <label>Last Login:</label>
-          <span><%= profile.last_login ? new Date(profile.last_login).toLocaleString() : "Never" %></span>
+          <span>
+            <%= profile.last_login ? new Date(profile.last_login).toLocaleString() : "Never" %>
+          </span>
         </div>
         <div class="profile-field">
           <label>Number Coin:</label>
-          <span><%= profile.coins ? 0 : "None" %></span>
+          <span>
+            <%= profile.coins ? 0 : "None" %>
+          </span>
         </div>
       </div>
     </div>
     <div class="profile-details">
       <div class="profile-field">
         <label>ELO Score:</label>
-        <span><%= profile.elo_score %></span>
+        <span>
+          <%= profile.elo_score %>
+        </span>
       </div>
       <div class="profile-field">
         <label>XP:</label>
-        <span><%= profile.xp %></span>
+        <span>
+          <%= profile.xp %>
+        </span>
       </div>
       <div class="profile-field">
         <label>Games Won:</label>
-        <span><%= profile.games_won %></span>
+        <span>
+          <%= profile.games_won %>
+        </span>
       </div>
       <div class="profile-field">
         <label>Games Draw:</label>
-        <span><%= profile.games_draw %></span>
+        <span>
+          <%= profile.games_draw %>
+        </span>
       </div>
       <div class="profile-field">
         <label>Games Lost:</label>
-        <span><%= profile.games_lost %></span>
+        <span>
+          <%= profile.games_lost %>
+        </span>
       </div>
       <div class="profile-field">
         <label>Coins:</label>
-        <span><%= profile.coins %></span>
+        <span>
+          <%= profile.coins %>
+        </span>
       </div>
       <div class="profile-field">
         <label>Member Since:</label>
-        <span><%= new Date(profile.created_at).toLocaleDateString() %></span>
+        <span>
+          <%= new Date(profile.created_at).toLocaleDateString() %>
+        </span>
       </div>
     </div>
 
@@ -241,11 +287,18 @@
       <h3>Historical Performance</h3>
       <canvas id="lineChart" width="600" height="400"></canvas>
     </div>
+    <br>
+    <br>
+    <div style="text-align: right;">
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+
   </div>
 
+<!-- 
   <footer>
     <p>&copy; 2025 The Caps. All rights reserved.</p>
-  </footer>
+  </footer> -->
 
   <script>
     // Logout function: clear local storage and redirect to /logout
@@ -295,11 +348,12 @@
 
     // Add click event listeners to table rows to trigger the chart update
     document.querySelectorAll('#gameStatsTable tbody tr').forEach(row => {
-      row.addEventListener('click', function() {
+      row.addEventListener('click', function () {
         const gameId = this.getAttribute('data-gameid');
         renderChart(gameId);
       });
     });
   </script>
 </body>
+
 </html>

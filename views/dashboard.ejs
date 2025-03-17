@@ -34,7 +34,14 @@
             width: 80%;
             text-align: left;
         }
-
+ #Notifications {
+            border: 1px solid #ccc;
+            height: 250px;
+            overflow-y: scroll;
+            margin: 20px auto;
+            width: 70%;
+            text-align: left;
+        }
         #playerList {
             list-style: none;
             padding: 0;
@@ -179,8 +186,8 @@
 
     <h2>Your Stats</h2>
 
-    <div id="playerListContainer">
-        <h2>Notification</h2>
+    <div id="Notifications" style="gap: 15px">
+        <h2>Notifications</h2>
 
         <ul id="playerList">
             <!-- Recent games will be listed here -->
@@ -201,9 +208,9 @@
         </nav>
     </div>
     
-    <footer>
+    <!-- <footer>
         <p>&copy; 2025 The Caps. All rights reserved.</p>
-    </footer>
+    </footer> -->
 
     <script>
         function myFunction() {

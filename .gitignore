@@ -60,3 +60,11 @@ typings/
 
 #ignore build folder
 build/
+
+.public/game_hisitory
+
+.game_hisitory/
+
+/public/game_hisitory/
+
+**/public/game_history/

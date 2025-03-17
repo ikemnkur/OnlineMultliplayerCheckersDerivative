@@ -1,12 +1,12 @@
 // Connect to Socket.IO
 const socket = io();
 
-// Global array to store player objects with simulated stats.
-let players = [];
+// Global array to store players (from server) including their mode info.
+let playersData = [];
 
-// Global sort settings
+// Global sort settings (if needed)
 let sortKey = 'username';
-let sortOrderAsc = true; 
+let sortOrderAsc = true;
 
 // DOM element references
 const playerList = document.getElementById('playerList');
@@ -16,79 +16,143 @@ const chatArea = document.getElementById('chatArea');
 const searchBar = document.getElementById('searchBar');
 const sortButtons = document.querySelectorAll('#sortFilters button');
 
-// Ask for username (replace with proper login if needed)
-let username = localStorage.getItem("ombgUsername")
-if(username == null){
+// ------------------------------
+// Join Lobby & Set User Data
+// ------------------------------
+let username = localStorage.getItem("ombgUsername");
+if (!username) {
   username = prompt("Enter your username for the lobby:") || "Anonymous";
-  localStorage.setItem("ombgUsername", username)
+  localStorage.setItem("ombgUsername", username);
 }
 
-
-// Emit join event
-socket.emit('joinLobby', username);
-
-// Utility: Generate a random integer
-function getRandomInt(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-// When a new player joins, simulate extra stats and add them.
-socket.on('playerJoined', (data) => {
-  // Avoid duplicating yourself.
-  if (data.username === username) return;
-  const player = {
-    username: data.username,
-    avgScore: getRandomInt(0, 100),
-    gamesPlayed: getRandomInt(1, 20),
-    avgTime: getRandomInt(30, 300)
-  };
-  players.push(player);
-  updatePlayerList();
-});
-
-// When a player leaves, remove them.
-socket.on('playerLeft', (data) => {
-  players = players.filter(p => p.username !== data.username);
-  updatePlayerList();
-});
-
-// Listen for periodic refresh from the server.
-socket.on('refreshPlayers', (serverPlayers) => {
-  // Merge the server list with existing stats if available.
-  players = serverPlayers.map(sp => {
-    // Skip if the username already exists in our array.
-    const existing = players.find(p => p.username === sp.username);
-    return existing || {
-      username: sp.username,
-      avgScore: getRandomInt(0, 100),
-      gamesPlayed: getRandomInt(1, 20),
-      avgTime: getRandomInt(30, 300)
-    };
-  });
-  updatePlayerList();
-});
-
-// Chat functionality
-chatForm.addEventListener('submit', (e) => {
-  e.preventDefault();
-  const message = chatInput.value.trim();
-  if (message !== '') {
-    socket.emit('lobbyMessage', { username, message });
-    chatInput.value = '';
+// Retrieve and parse playerStats from localStorage (if available)
+let playerStatsStr = localStorage.getItem('playerStats');
+let playerStats = {};
+if (playerStatsStr) {
+  try {
+    playerStats = JSON.parse(playerStatsStr);
+  } catch (e) {
+    console.error("Error parsing playerStats:", e);
   }
+}
+
+// Determine current betting mode; default to "none"
+let bettingModeElem = document.querySelector('input[name="tool"]:checked');
+let bettingMode = bettingModeElem ? bettingModeElem.value : "none";
+
+// Construct userdata with all properties and send it to the server.
+let userdata = {
+  username: username,
+  mode: bettingMode,
+  gamesPlayed: playerStats.gamesPlayed || 0,
+  gamesWon: playerStats.gamesWon || 0,
+  gamesLost: playerStats.gamesLost || 0,
+  gamesDraw: playerStats.gamesDraw || 0,
+  winMeans: playerStats.winMeans || {},
+  totalTime: playerStats.totalTime || 0,
+  totalMoves: playerStats.totalMoves || 0,
+  totalScoreWhenWon: playerStats.totalScoreWhenWon || 0,
+  totalScoreWhenLost: playerStats.totalScoreWhenLost || 0
+};
+socket.emit('joinLobby', userdata);
+
+// When the betting mode radio changes, update your mode on the server.
+// Listen for changes to the betting mode radio buttons.
+document.querySelectorAll('input[name="tool"]').forEach(radio => {
+  radio.addEventListener('change', function () {
+    const newMode = this.value;
+    // Emit the updated betting mode to the server.
+    socket.emit('updateBettingMode', { mode: newMode });
+    console.log("Betting mode updated to:", newMode);
+    // Update the local filtering if necessary.
+    renderPlayers();
+  });
 });
 
-socket.on('lobbyMessage', (data) => {
-  const msgDiv = document.createElement('div');
-  msgDiv.textContent = `${data.username}: ${data.message}`;
-  chatArea.appendChild(msgDiv);
-  chatArea.scrollTop = chatArea.scrollHeight;
+
+// ------------------------------
+// Player List Rendering
+// ------------------------------
+function addPlayer(player) {
+  // Do not show your own entry.
+  if (player.username === username) return;
+  const li = document.createElement('li');
+  li.textContent = player.username + " ";
+
+  // Create a challenge button.
+  const challengeBtn = document.createElement('button');
+  challengeBtn.textContent = 'Challenge';
+  challengeBtn.style.marginLeft = '10px';
+
+  challengeBtn.addEventListener('click', () => {
+    // Confirm challenge request.
+    if (confirm(`Do you want to challenge ${player.username} to a game?`)) {
+      socket.emit('challengePlayer', { challenger: username, target: player.username });
+      alert(`Challenge sent to ${player.username}. Awaiting response...`);
+    }
+  });
+
+  li.appendChild(challengeBtn);
+  playerList.appendChild(li);
+}
+
+// function renderPlayers() {
+//   // Read the current betting mode from the radio group.
+//   const selectedMode = document.querySelector('input[name="tool"]:checked').value;
+//   // Filter playersData to only those with the same mode and that are not you.
+//   const filteredPlayers = playersData.filter(player => player.mode === selectedMode && player.username !== username);
+
+//   // (Optionally) Apply search filtering.
+//   const query = searchBar.value.trim().toLowerCase();
+//   const finalPlayers = filteredPlayers.filter(player =>
+//     player.username.toLowerCase().includes(query)
+//   );
+
+//   // Optionally, add sorting here if needed.
+//   // For now, we simply clear and render.
+//   playerList.innerHTML = '';
+//   finalPlayers.forEach(player => addPlayer(player));
+// }
+
+
+// Render players based on selected betting mode and search.
+function renderPlayers() {
+  const selectedMode = document.querySelector('input[name="tool"]:checked').value;
+  const query = searchBar.value.trim().toLowerCase();
+  const filteredPlayers = playersData.filter(player =>
+    player.mode === selectedMode && player.username !== username &&
+    player.username.toLowerCase().includes(query)
+  );
+  playerList.innerHTML = '';
+  filteredPlayers.forEach(player => addPlayer(player));
+}
+
+// Socket event for refreshed player list.
+socket.on('refreshPlayers', (serverPlayers) => {
+  playersData = serverPlayers;
+  renderPlayers();
 });
 
-// Search filtering: update on each keystroke.
-searchBar.addEventListener('input', updatePlayerList);
+// ------------------------------
+// Socket Events for Player List
+// ------------------------------
+socket.on('refreshPlayers', serverPlayers => {
+  // Expect serverPlayers to be an array of objects { username, mode }
+  playersData = serverPlayers;
+  renderPlayers();
+});
 
-// Sorting buttons
+socket.on('playerJoined', data => {
+  // data: { username, mode }
+  if (data.username === username) return;
+  playersData.push(data);
+  renderPlayers();
+});
+
+// Update list on search.
+searchBar.addEventListener('input', renderPlayers);
+
+// Sorting buttons (if needed; you can expand this as required)
 sortButtons.forEach(button => {
   button.addEventListener('click', () => {
     const newSortKey = button.getAttribute('data-sort');
@@ -98,52 +162,36 @@ sortButtons.forEach(button => {
       sortKey = newSortKey;
       sortOrderAsc = true;
     }
-    updatePlayerList();
+    // If sorting is required, you can sort the final list here.
+    renderPlayers();
   });
 });
 
-// Update the player list display.
-function updatePlayerList() {
-  playerList.innerHTML = '';
-  const query = searchBar.value.trim().toLowerCase();
-  
-  let filteredPlayers = players.filter(player => 
-    player.username.toLowerCase().includes(query)
-  );
-  
-  filteredPlayers.sort((a, b) => {
-    let valA = a[sortKey];
-    let valB = b[sortKey];
-    if (typeof valA === 'string') {
-      return sortOrderAsc ? valA.localeCompare(valB) : valB.localeCompare(valA);
-    } else {
-      return sortOrderAsc ? valA - valB : valB - valA;
-    }
-  });
-  
-  filteredPlayers.forEach(player => {
-    const li = document.createElement('li');
-    li.textContent = `${player.username} - Avg Score: ${player.avgScore}, Games Played: ${player.gamesPlayed}, Avg Time: ${player.avgTime}s`;
-    
-    // Only add a challenge button if it's not your own username.
-    if (player.username !== username) {
-      const challengeBtn = document.createElement('button');
-      challengeBtn.textContent = 'Challenge';
-      challengeBtn.style.marginLeft = '10px';
-      challengeBtn.addEventListener('click', () => {
-        if (confirm(`Do you want to challenge ${player.username} to a game?`)) {
-          socket.emit('challengePlayer', { challenger: username, target: player.username });
-        }
-      });
-      li.appendChild(challengeBtn);
-    }
-    
-    playerList.appendChild(li);
-  });
-}
+// ------------------------------
+// Chat Functionality
+// ------------------------------
+chatForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const message = chatInput.value.trim();
+  if (message !== '') {
+    socket.emit('lobbyMessage', { username, message });
+    chatInput.value = '';
+  }
+});
+socket.on('lobbyMessage', (data) => {
+  const msgDiv = document.createElement('div');
+  msgDiv.textContent = `${data.username}: ${data.message}`;
+  chatArea.appendChild(msgDiv);
+  chatArea.scrollTop = chatArea.scrollHeight;
+});
 
-// Listen for an incoming challenge.
+// ------------------------------
+// Challenge Request Handling
+// ------------------------------
+
+// Incoming challenge: Only prompt if you're not the challenger.
 socket.on('incomingChallenge', (data) => {
+  if (data.challenger === username) return; // ignore your own challenge.
   if (confirm(`You have been challenged by ${data.challenger}. Accept challenge?`)) {
     socket.emit('challengeResponse', { challenger: data.challenger, target: username, accepted: true });
   } else {
@@ -151,7 +199,7 @@ socket.on('incomingChallenge', (data) => {
   }
 });
 
-// Listen for challenge responses (for the challenger).
+// For the challenger: listen for responses.
 socket.on('challengeResponse', (data) => {
   if (data.accepted) {
     alert(`${data.target} accepted your challenge!`);
@@ -160,9 +208,19 @@ socket.on('challengeResponse', (data) => {
   }
 });
 
-// Listen for start game signal.
+// Start game event.
 socket.on('startGame', (data) => {
-  alert(`Starting game with ${data.opponent}.`);
-  // Redirect to the game page with the room id (adjust the URL if needed)
-  window.location.href = `game.html?roomId=${data.roomId}`;
+  // Get the current betting mode from the radio buttons.
+  const currentMode = document.querySelector('input[name="tool"]:checked').value;
+  
+  if (currentMode === "none") {
+    alert(`Starting game with ${data.opponent}.`);
+    window.location.href = `game.html?roomId=${data.roomId}`;
+  } else if (currentMode === "simple") {
+    alert(`Place bets on game with ${data.opponent}.`);
+    window.location.href = `simplebet?roomId=${data.roomId}`;
+  } else if (currentMode === "advanced") {
+    alert(`Placing wagers and bets game with ${data.opponent}.`);
+    window.location.href = `advancedbet?roomId=${data.roomId}`;
+  }
 });

@@ -1,43 +1,17 @@
 <!DOCTYPE html>
 <html>
-
 <head>
   <meta charset="UTF-8">
   <title>About - Derivative Checkers Game</title>
-  <link rel="stylesheet" href="./public/info.css">
   <style>
+    /* Overall page styling (similar to Dashboard) */
     body {
       font-family: Arial, sans-serif;
-      background-color: #f9f9f9;
       margin: 0;
-      padding: 20px;
-      display: flex;
-      justify-content: center;
-    }
-
-    .container {
-      background: #fff;
-      max-width: 600px;
-      padding: 20px 30px;
-      border-radius: 5px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    }
-
-    h1,
-    h2 {
+      padding: 0;
+      background: #f9f9f9;
+      color: #333;
       text-align: center;
-    }
-
-    ul {
-      list-style-type: disc;
-      margin-left: 20px;
-    }
-
-    a {
-      display: inline-block;
-      margin-top: 20px;
-      text-decoration: none;
-      color: #4285f4;
     }
     header {
       background: #3498db;
@@ -45,18 +19,49 @@
       padding: 2rem 1rem;
       margin-bottom: 2rem;
     }
+    header h1 {
+      margin: 0 0 0.5rem;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px 30px;
+      background: #fff;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      text-align: left;
+    }
+    h1, h2 {
+      text-align: center;
+    }
+    ul {
+      list-style-type: disc;
+      margin-left: 20px;
+    }
+    a {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 0.5rem 1rem;
+      text-decoration: none;
+      background: #2ecc71;
+      color: #fff;
+      border-radius: 4px;
+      transition: background 0.3s ease;
+    }
+    a:hover {
+      background: #27ae60;
+    }
     footer {
-            background: #333;
-            color: #fff;
-            padding: 10px;
-            position: fixed;
-            bottom: 0;
-            width: 100%;
-            height: 32px;
-        }
+      background: #333;
+      color: #fff;
+      padding: 10px;
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      text-align: center;
+    }
   </style>
 </head>
-
 <body>
   <header>
     <h1>The Caps Game</h1>
@@ -65,13 +70,11 @@
 
   <div class="container">
     <h1>About Derivative Checkers Game</h1>
-    <p>Welcome to the Derivative Checkers Game, an online multiplayer experience with a unique twist on classic
-      checkers.</p>
+    <p>Welcome to the Derivative Checkers Game, an online multiplayer experience with a unique twist on classic checkers.</p>
 
     <h2>How to Play</h2>
     <ul>
-      <li>The board is 8×8 with a custom formation: 6 pieces in the back row, 4 in the middle, and 2 in the top row
-        placed on specific columns.</li>
+      <li>The board is 8×8 with a custom formation: 6 pieces in the back row, 4 in the middle, and 2 in the top row placed on specific columns.</li>
       <li>Pieces can move sideways and forward, and diagonal moves allow for capturing opponent pieces.</li>
       <li>A win is achieved when a piece reaches the opponent's side or based on other in-game conditions.</li>
       <li>Each player has a 3-minute chess-like timer.</li>
@@ -88,11 +91,12 @@
     </ul>
 
     <p>Challenge your friends and enjoy this fresh take on a classic game!</p>
-    <a href="/dashboard">Back Dashboard</a>
-  </div>
-  <footer>
-    <p>&copy; 2025 The Caps. All rights reserved.</p>
-  </footer>
-</body>
+    <a href="#" onclick="window.history.back(); return false;">Back</a>
 
+  </div>
+
+  <!-- <footer>
+    <p>&copy; 2025 The Caps. All rights reserved.</p>
+  </footer> -->
+</body>
 </html>

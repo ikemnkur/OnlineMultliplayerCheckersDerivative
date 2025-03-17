@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>The Caps Game with Feedback</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <h1>The Caps Game</h1>
+  <!-- Status line (waiting, made offer, rejected, accepted) -->
+  <div id="status">Waiting for opponent's bet...
+    <!-- for when both player accept start count down -->
+    <div id=cntdwnTxt> The game will start in: <strong id="cntdwn">30</strong></div>
+
+
+    <div>
+      Your Opponet is betting:
+      <!-- Todo inputs need a place holder until other player makes a decision an -->
+      <div id=oppCoinsPlaying> Coins playing: <strong id="coin">100</strong></div>
+      <div id=oppCcoinsDraw> Draw: <strong id="coin">15</strong></div>
+      <div id=oppCoinsConceed> Conceed: <strong id="coin">25</strong></div>
+    </div>
+    <!-- these should appear when the opponent makes an offer -->
+    <button> Accept </button>
+    <!-- Send message that opp player accepts, start countdown, go to game page after countdown -->
+    <!-- Send message that opp player rejects, hide these 2 buttons, until new offer is made -->
+    <button> Reject </button>
+  </div>
+
+  <!-- Live Chat Section -->
+  <div id="chatContainer">
+    <h2>Lobby Chat</h2>
+    <div id="chatArea"></div>
+    <form id="chatForm">
+      <input type="text" id="chatInput" placeholder="Type a message..." autocomplete="off" />
+      <button type="submit">Send</button>
+    </form>
+  </div>
+
+  <!-- This is the total amount of coin that the player (you) are going play with sum of: jackpot + pieces bet + concession + draw  -->
+  <div id=TotalCoinsPlaying> <strong>Total coins that you are playing: </strong></div>
+  <div>
+    Your are betting:
+    <div>
+      <p> Place coins in the Jackpot </p>
+      <input id="jackpot" type="number">
+    </div>
+    <!-- This is total amount of coin the player -->
+    <div id=CoinsPlaying> Total Coins put on pieces:<input type="number" id="coinsOnPieces"></div>
+    <!-- if the game ends in a draw the play lose this amount to the other player -->
+    <div id=CcoinsDraw> Draw: <input id="coinForDraw"></div>
+    <!-- if one of the players choose to conceed the game before it ends this other player will get this amont -->
+    <div id=CoinsConceed> Conceed: <input id="coinForConcession"></div>
+
+    <!-- Send data to the other player about the bet -->
+    <div style="display: flex; gap: 30px">
+      <button> Make offer </button> <button> Default offer </button> <button> No Bet (free play)  
+        <!-- skip to the game with betting mode off -->
+      </button>
+    </div>
+
+  </div>
+
+  <!-- Todo: create a small grid with the board pieces in the default positions labeled A-L for each peice -->
+  <!-- draw the pieces on the board, the bottom 3 rows are for the player's pieces  -->
+
+  <!-- the pieces will take this format
+    +--+---+---+---+---+---+---+--+
+    |  | ? | ? | ? | ? | ? | ? |  |
+    +--+---+---+---+---+---+---+--+
+    |  |   | ? | ? | ? | ? |   |  |
+    +--+---+---+---+---+---+---+--+
+    |  |   |   | ? | ? |   |   |  |
+    +--+---+---+---+---+---+---+--+
+    |  |   |   |   |   |   |   |  |
+    +--+---+---+---+---+---+---+--+
+    |  |   |   |   |   |   |   |  |
+    +--+---+---+---+---+---+---+--+
+    |  |   |   | K | L |   |   |  |
+    +--+---+---+---+---+---+---+--+
+    |  |   | G | H | I | J |   |  |
+    +--+---+---+---+---+---+---+--+
+    |  | A | B | C | D | E | F |  |
+    +--+---+---+---+---+---+---+--+
+  -->
+  <!-- the value place on each piece will show in place of the letters -->
+  <canvas></canvas>
+
+  <div id="Bets Box">
+    <h3>Place Bets/Wagers</h3>
+    <!-- this value = coinsOnPieces - coinsBetSum -->
+    <div id=coinsLeftDiv> Coins remaining to put on Pieces: <strong id="coinsLeftForBetting">5</strong></div>
+
+
+
+    <!-- Todo: for each piece should have a input field that a take the number coin bet on that piece  -->
+    <!-- Todo: defualt value will be id="coinsOnPieces" amount divide by 12 rounded down  -->
+    <!-- Todo: total sum should not exceed the total coin playing on pieces amount amount (id="coinsOnPieces")  -->
+    <table>
+      <h6> Pieces Wager</h6>
+      <p> Place coin on pieces</p>
+      <tbody>
+        <!-- Horizontal Row 1 (the bottom row)  -->
+        <tr>
+          <td>
+            A:
+
+            <input type="number">
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            B:
+
+            <input type="number">
+          </td>
+          <!-- need to add "C", "D", "E" and "F" -->
+        </tr>
+        <!-- Horizontal Row 2 (middle)  -->
+        <tr>
+          <td>
+            G:
+
+            <input type="number">
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            h:
+
+            <input type="number">
+          </td>
+          <!-- need to add "I" and "J" -->
+        </tr>
+        <!-- Horizontal Row 3 (the row that is on top of the others)  -->
+        </tr>
+        <tr>
+          <td>
+            K:
+
+            <input type="number">
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            L:
+
+            <input type="number">
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <!--  -->
+    <button>Spead bet on pieces eqaully</button>
+    <button>Spead bets on pieces randomlly</button>
+    <!-- this the sum of the coins bet on pieces A-L -->
+    <div id=coinsBettDiv> Sum of coins put on Pieces: <strong id="coinsBetSum">5</strong></div>
+
+  </div>
+
+
+  <!-- Other controls -->
+  <div>
+   
+    <button id="dashboard">Dashboard</button>
+    <button id="buyMoreCoins">Purchase More Coins</button>
+    <button id="backToLobby">Back to Lobby</button>
+   
+  </div>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="client.js"></script>
+</body>
+
+</html>

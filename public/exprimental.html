@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Experimental Study Mode</title>
-    <link rel="stylesheet" href="experimental.css">
+    <!-- <link rel="stylesheet" href="experimental.css"> -->
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -116,6 +116,20 @@
         <p>Test hypothetical scenarios by moving, adding, or removing pieces freely.</p>
     </header>
     <div class="container">
+        <nav>
+            <a href="/lobby">
+                Go to Lobby
+            </a>
+            <a href="/payments">
+                Buy Coins
+            </a>
+            <a href="/profile">
+                Go to Profile
+            </a>
+        </nav>
+    </div>
+
+    <div class="container">
         <canvas id="expCanvas" width="600" height="600"></canvas>
         <div id="controls">
             <fieldset>
@@ -148,7 +162,7 @@
                     << Previous</button>
                         <button id="nextMove">Next >></button>
                         <button id="autoPlay">Auto Play</button>
-                        <button id="clear" style="float: right;">Clear</button>
+                        <button id="clearBtn" style="float: right;">Clear</button>
             </div>
             <div id="externalHistory">
                 <textarea id="historyTextarea" placeholder="Paste move history JSON here..."></textarea>
@@ -160,7 +174,7 @@
             <button id="copyButton">Copy/Share Game</button>
         </div>
     </div>
-    <script src="experimental.js"></script>
+    <!-- <script src="experimental.js"></script> -->
     <script>
         // experimental.js
 
@@ -184,6 +198,8 @@
         const copyBtn = document.getElementById('copyButton');
         const loadHistoryBtn = document.getElementById('loadHistory');
         const historyTextarea = document.getElementById('historyTextarea');
+
+        let loaded = false
 
         let currentTool = "move";  // "move", "add", or "remove"
         let selectedPiece = null;  // for move tool
@@ -312,6 +328,7 @@
         // Canvas click handling
         canvas.addEventListener('click', (e) => {
             if (previewMode) return; // In preview mode, ignore clicks.
+            if (loaded ) drawBoard();
             const cellSize = canvas.width / gridSize;
             const rect = canvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
@@ -446,6 +463,10 @@
                     alert("Failed to copy: " + err);
                 });
         });
+
+        setTimeout(() => {
+            loaded = true
+        }, 250);
 
     </script>
 </body>

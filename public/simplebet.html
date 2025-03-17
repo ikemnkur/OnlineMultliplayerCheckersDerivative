@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>The Caps Game with Feedback</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Overall page styling similar to dashboard */
+    body {
+      font-family: Arial, sans-serif;
+      background: #f9f9f9;
+      color: #333;
+      padding: 20px;
+      margin: 0;
+      text-align: center;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+    }
+
+    /* Status Section */
+    #status {
+      background: #eee;
+      padding: 10px;
+      border-radius: 5px;
+      margin: 0 auto 20px;
+      max-width: 600px;
+    }
+
+    #cntdwnTxt {
+      margin-top: 10px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    #status>div {
+      margin: 10px 0;
+    }
+
+    #status button {
+      margin: 5px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    #status button:first-of-type {
+      background-color: #2ecc71;
+      color: #fff;
+    }
+
+    #status button:last-of-type {
+      background-color: #e74c3c;
+      color: #fff;
+    }
+
+    /* Chat Section */
+    #chatContainer {
+      background: #fff;
+      max-width: 600px;
+      margin: 0 auto 20px;
+      padding: 10px;
+      border-radius: 5px;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+      text-align: left;
+    }
+
+    #chatContainer h2 {
+      margin-top: 0;
+    }
+
+    #chatArea {
+      height: 64px;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      padding: 5px;
+      margin-bottom: 10px;
+    }
+
+    #chatForm {
+      display: flex;
+    }
+
+    #chatInput {
+      flex: 1;
+      padding: 8px;
+      font-size: 14px;
+    }
+
+    #chatForm button {
+      padding: 8px 12px;
+      background-color: #4285f4;
+      border: none;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    /* Betting Section */
+    #TotalCoinsPlaying {
+      margin: 20px auto;
+      font-size: 18px;
+      max-width: 600px;
+    }
+
+    #bettingSection {
+      background: #fff;
+      padding: 20px;
+      margin: 20px auto;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      max-width: 600px;
+      text-align: left;
+    }
+
+    #bettingSection div {
+      margin-bottom: 10px;
+    }
+
+    #bettingSection input {
+      width: 100px;
+      padding: 5px;
+      margin-left: 10px;
+    }
+
+    /* Offer buttons container */
+    #betButtonsContainer {
+      display: flex;
+      gap: 30px;
+      margin-top: 10px;
+      justify-content: center;
+    }
+
+    #betButtonsContainer button {
+      padding: 8px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      background-color: #4285f4;
+      color: #fff;
+    }
+
+    /* Canvas for board */
+    canvas {
+      background: #fff;
+      border: 1px solid #ccc;
+      margin: 20px auto;
+      display: block;
+    }
+
+    /* Bets/Wagers Section */
+    #BetsBox {
+      background: #fff;
+      padding: 20px;
+      margin: 20px auto;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      max-width: 600px;
+      text-align: left;
+    }
+
+    #BetsBox h3 {
+      margin-top: 0;
+    }
+
+    #coinsLeftDiv {
+      margin-bottom: 10px;
+    }
+
+    #BetsBox table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    #BetsBox th,
+    #BetsBox td {
+      border: 1px solid #ccc;
+      padding: 5px;
+      text-align: center;
+    }
+
+    #BetsBox input {
+      width: 60px;
+    }
+
+    /* Sum display */
+    #coinsBettDiv {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    /* Other Controls */
+    #otherControls {
+      margin-top: 20px;
+    }
+
+    #otherControls button {
+      margin: 5px;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      background-color: #4285f4;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    #otherControls button:hover {
+      background-color: #357ae8;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>The Caps Game</h1>
+
+  <!-- Status Section -->
+  <div id="status">
+    Waiting for opponent's bet...
+    <div id="cntdwnTxt" style="display: none;">The game will start in: <strong id="cntdwn">30</strong></div>
+    <div id="opponentOffer" style="display: none;">
+      Your Opponent is betting:<br>
+      Coins playing: <strong id="oppCoinsPlaying">100</strong><br>
+      Draw: <strong id="oppCcoinsDraw">15</strong><br>
+      Conceed: <strong id="oppCoinsConceed">25</strong>
+    </div>
+    <div id="offerButtons" style="display: none;">
+      <button id="acceptOffer">Accept</button>
+      <button id="rejectOffer">Reject</button>
+    </div>
+  </div>
+
+  <!-- Live Chat Section -->
+  <div id="chatContainer">
+    <h2>Chat</h2>
+    <div id="chatArea"></div>
+    <form id="chatForm">
+      <input type="text" id="chatInput" placeholder="Type a message..." autocomplete="off" />
+      <button id="sendMsg">Send</button>
+    </form>
+  </div>
+
+  <!-- Total Coins Playing -->
+  <div id="TotalCoinsPlaying">
+    <strong>Total coins that you are playing with:</strong> <span id="totalCoins">0</span>
+  </div>
+
+  <!-- Betting Section -->
+  <div id="bettingSection">
+    <p>Your are betting (win/lose): <input id="betAmount" type="number" value="0"></p>
+    <!-- <div>
+      Place coins in the Jackpot: <input id="jackpot" type="number" value="0">
+    </div> -->
+    <!-- <div id="CoinsPlaying">
+      Total Coins put on pieces: <input type="number" id="coinsOnPieces" value="0">
+    </div> -->
+    <div id="CcoinsDraw">
+      Draw: <input id="coinForDraw" type="number" value="0">
+    </div>
+    <div id="CoinsConceed">
+      Conceed: <input id="coinForConcession" type="number" value="0">
+    </div>
+    <div id="betButtonsContainer">
+      <button id="makeOfferButton">Make offer</button>
+      <button id="defaultOfferButton">Default offer</button>
+      <button id="noBetButton">No Bet (free play)</button>
+    </div>
+  </div>
+
+
+    
+
+  <!-- Other Controls -->
+  <div id="otherControls">
+    <button id="dashboardBtn">Dashboard</button>
+    <button id="buyMoreCoins">Purchase More Coins</button>
+    <button id="backToLobby">Back to Lobby</button>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script defer>
+    /***********************
+     * Global Variables & Initial Setup
+     ***********************/
+    const socket = io();
+    let totalCoinsPlaying = parseInt(document.getElementById('betAmount').value) || 100; // Fake total coins playing (sum of pot, pieces, draw, concession)
+    let coinsAvailable = 150;    // Fake coins available for wagers on pieces
+
+    // Set initial display values
+    document.getElementById('totalCoins').innerText = totalCoinsPlaying;
+    // document.getElementById('coinsLeftForBetting').innerText = coinsAvailable;
+
+    // When coinsOnPieces changes, update default wagers for pieces
+    const coinsOnPiecesInput = document.getElementById('coinsOnPieces');
+    const pieceBetInputs = document.querySelectorAll('.pieceBet');
+
+    // function updateWagerDefaults() {
+    //   const coinsOnPieces = parseInt(coinsOnPiecesInput.value) || 0;
+    //   const defaultBet = Math.floor(coinsOnPieces / 12);
+    //   pieceBetInputs.forEach(input => input.value = defaultBet);
+    //   updateWagerSum();
+    // }
+
+    // // coinsOnPiecesInput.addEventListener('input', updateWagerDefaults);
+    // updateWagerDefaults();
+
+    // // Validate and update total wager sum
+    // function updateWagerSum() {
+    //   let sum = 0;
+    //   pieceBetInputs.forEach(input => {
+    //     sum += parseInt(input.value) || 0;
+    //   });
+    //   document.getElementById('coinsBetSum').innerText = sum;
+    //   // Also update coins left for betting:
+    //   const coinsOnPieces = parseInt(coinsOnPiecesInput.value) || 0;
+    //   document.getElementById('coinsLeftForBetting').innerText = Math.max(0, coinsOnPieces - sum);
+    // }
+
+    // pieceBetInputs.forEach(input => {
+    //   input.addEventListener('input', updateWagerSum);
+    // });
+
+    io.on('connection', (socket) => {
+      console.log('A user connected: ' + socket.id);
+
+      // (Existing logic for lobby mode and game mode here)
+
+      // Advanced Betting: if a roomId is provided in the handshake query, assume the socket is in an advanced betting session.
+      const bettingRoom = socket.handshake.query.roomId;
+      if (bettingRoom) {
+        socket.join(bettingRoom);
+        console.log(`${socket.username} joined betting room ${bettingRoom}`);
+
+        // Handle offerMade event: store the offer and forward it to the other player.
+        socket.on('offerMade', (offerData) => {
+          socket.offerData = offerData;
+          console.log(`${socket.username} made an offer:`, offerData);
+          // Forward the offer to the other socket in the room.
+          socket.to(bettingRoom).emit('offerReceived', { challenger: socket.username, offerData });
+        });
+
+        // Handle offerResponse event: store the response and notify the room.
+        socket.on('offerResponse', (response) => {
+          // response should be an object: { accepted: true/false }
+          socket.offerResponse = response.accepted;
+          console.log(`${socket.username} responded with accepted: ${response.accepted}`);
+          // Notify the other player of this response.
+          socket.to(bettingRoom).emit('offerResponse', { from: socket.username, accepted: response.accepted });
+
+          // Now check if both players in the room have accepted.
+          const clients = io.sockets.adapter.rooms.get(bettingRoom);
+          if (clients) {
+            let acceptedCount = 0;
+            let totalCount = 0;
+            for (const clientId of clients) {
+              const clientSocket = io.sockets.sockets.get(clientId);
+              if (clientSocket) {
+                totalCount++;
+                if (clientSocket.offerResponse === true) acceptedCount++;
+              }
+            }
+            if (totalCount === 2 && acceptedCount === 2) {
+              // Both players accepted.
+              console.log("Both players accepted the offer in room:", bettingRoom);
+              io.to(bettingRoom).emit('offerBothAccepted');
+            }
+          }
+        });
+      }
+
+      // (Other socket event handlers follow below.)
+    });
+
+
+    /***********************
+     * Betting Section Buttons Logic
+     ***********************/
+     document.getElementById('bettingSection').addEventListener('click', function () {
+      const betAmount = parseInt(document.getElementById('betAmount').value) || 0;
+      const coinForDraw = parseInt(document.getElementById('coinForDraw').value) || 0;
+      const coinForConcession = parseInt(document.getElementById('coinForConcession').value) || 0;
+    
+      document.getElementById('totalCoins').value = betAmount+ coinForDraw +coinForConcession;
+    })
+    
+    let x = setInterval(() => {
+      const betAmount = parseInt(document.getElementById('betAmount').value) || 0;
+      const coinForDraw = parseInt(document.getElementById('coinForDraw').value) || 0;
+      const coinForConcession = parseInt(document.getElementById('coinForConcession').value) || 0;
+    
+      document.getElementById('totalCoins').value = betAmount+coinForDraw+coinForConcession;
+    }, 500);
+
+    /***********************
+     * Offer Buttons Logic
+     ***********************/
+    document.getElementById('makeOfferButton').addEventListener('click', function () {
+      const betAmount = parseInt(document.getElementById('betAmount').value) || 0;
+      // const jackpot = parseInt(document.getElementById('jackpot').value) || 0;
+      const coinsOnPieces = parseInt(document.getElementById('coinsOnPieces').value) || 0;
+      const coinForDraw = parseInt(document.getElementById('coinForDraw').value) || 0;
+      const coinForConcession = parseInt(document.getElementById('coinForConcession').value) || 0;
+
+      // if (jackpot < 0.25 * coinsOnPieces) {
+      //   alert("Jackpot must be at least 25% of the total coins on pieces.");
+      //   return;
+      // }
+
+      // Gather piece wagers into an object.
+      let wagers = {};
+      const pieces = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
+      pieceBetInputs.forEach((input, index) => {
+        wagers[pieces[index]] = parseInt(input.value) || 0;
+      });
+
+      const offerData = {
+        // jackpot,
+        coinsOnPieces,
+        coinForDraw,
+        coinForConcession,
+        wagers,
+        totalCoinsPlaying
+      };
+      console.log("Offer Data:", offerData);
+      // TODO: Send offerData to opponent via socket.io
+      alert("Offer made! Waiting for opponent's response...");
+
+      // Simulate opponent offer by showing opponent info and offer buttons.
+      document.getElementById('opponentOffer').style.display = 'block';
+      document.getElementById('offerButtons').style.display = 'block';
+    });
+
+    document.getElementById('defaultOfferButton').addEventListener('click', function () {
+      // For default offer, fill in some default values.
+      document.getElementById('coinForDraw').value = Math.floor(totalCoinsPlaying * 0.1);
+      document.getElementById('coinForConcession').value = Math.floor(totalCoinsPlaying * 0.2);
+      updateWagerDefaults();
+      alert("Default offer set. Click 'Make offer' to send.");
+    });
+
+    document.getElementById('noBetButton').addEventListener('click', function () {
+      // Free play: redirect to game page with betting mode off.
+      window.location.href = '/game?mode=free';
+    });
+
+    /***********************
+     * Spread Bet Buttons
+     ***********************/
+    // document.getElementById('spreadEqualButton').addEventListener('click', function () {
+    //   const coinsOnPieces = parseInt(coinsOnPiecesInput.value) || 0;
+    //   const equalBet = Math.floor(coinsOnPieces / 12);
+    //   pieceBetInputs.forEach(input => input.value = equalBet);
+    //   updateWagerSum();
+    // });
+
+    // document.getElementById('spreadRandomButton').addEventListener('click', function () {
+    //   const coinsOnPieces = parseInt(coinsOnPiecesInput.value) || 0;
+    //   let remaining = coinsOnPieces;
+    //   pieceBetInputs.forEach((input, index) => {
+    //     // For the last input, assign all remaining.
+    //     if (index === pieceBetInputs.length - 1) {
+    //       input.value = remaining;
+    //     } else {
+    //       // Random bet between 0 and remaining/(remaining inputs)
+    //       const maxForThis = Math.floor(remaining / (pieceBetInputs.length - index));
+    //       const randomBet = Math.floor(Math.random() * (maxForThis + 1));
+    //       input.value = randomBet;
+    //       remaining -= randomBet;
+    //     }
+    //   });
+    //   updateWagerSum();
+    // });
+
+    /***********************
+     * Offer Response: Accept / Reject
+     ***********************/
+    document.getElementById('acceptOffer').addEventListener('click', function () {
+      // TODO: Notify opponent/server that the offer is accepted.
+      alert("Offer accepted! Starting countdown...");
+      document.getElementById('offerButtons').style.display = 'none';
+      startCountdown(30);
+    });
+
+    document.getElementById('rejectOffer').addEventListener('click', function () {
+      // TODO: Notify opponent/server that the offer is rejected.
+      alert("Offer rejected. Waiting for new offer...");
+      document.getElementById('offerButtons').style.display = 'none';
+      document.getElementById('opponentOffer').style.display = 'none';
+    });
+
+    function startCountdown(seconds) {
+      const cntdwnTxt = document.getElementById('cntdwnTxt');
+      const cntdwnElem = document.getElementById('cntdwn');
+      cntdwnTxt.style.display = 'block';
+      let counter = seconds;
+      cntdwnElem.innerText = counter;
+      const timer = setInterval(() => {
+        counter--;
+        cntdwnElem.innerText = counter;
+        if (counter <= 0) {
+          clearInterval(timer);
+          window.location.href = '/game';
+        }
+      }, 1000);
+    }
+
+    /***********************
+     * Other Controls
+     ***********************/
+    document.getElementById('dashboardBtn').addEventListener('click', () => {
+      window.location.href = '/dashboard';
+    });
+    document.getElementById('buyMoreCoins').addEventListener('click', () => {
+      window.location.href = '/payments';
+    });
+    document.getElementById('backToLobby').addEventListener('click', () => {
+      window.location.href = '/lobby';
+    });
+
+    /***********************
+     * Chat Functionality (Placeholder)
+     ***********************/
+    
+    const chatForm = document.getElementById('chatForm');
+    const sendMsgBtn = document.getElementById('sendMsg');
+    const chatInput = document.getElementById('chatInput');
+    const chatArea = document.getElementById('chatArea');
+
+    sendMsgBtn.addEventListener('click', function (e) {
+      // e.preventDefault();
+      const message = chatInput.value.trim();
+      if (message) {
+        // TODO: Emit chat message to server
+        socket.emit('lobbyMessage', { username: 'You', message });
+        addChatMessage('You', message);
+        chatInput.value = '';
+      }
+    });
+
+    // Listen for lobby messages (example)
+    socket.on('lobbyMessage', data => {
+      addChatMessage(data.username, data.message);
+    });
+
+    function addChatMessage(username, message) {
+      const msgDiv = document.createElement('div');
+      msgDiv.innerText = username + ": " + message;
+      chatArea.appendChild(msgDiv);
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
+
+  </script>
+  
+</body>
+
+</html>

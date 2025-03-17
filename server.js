@@ -16,27 +16,19 @@ app.get('/game', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'game.html'));
 });
 
-// // this page is reservred the site new, videos, events, intro, player dashboard.
-// app.get('/', (req, res) => {
-//   res.sendFile(path.join(__dirname, 'public', 'index.html'));
-// });
-
-// // New routes for login, sign-up, and info pages
-// app.get('/login', (req, res) => {
-//   res.sendFile(path.join(__dirname, 'public', 'login.html'));
-// });
-
-// app.get('/signup', (req, res) => {
-//   res.sendFile(path.join(__dirname, 'public', 'signup.html'));
-// });
-
-// app.get('/info', (req, res) => {
-//   res.sendFile(path.join(__dirname, 'public', 'info.html'));
-// });
-
 // NEW: Routing for the lobby page
 app.get('/lobby', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'lobby.html'));
+});
+
+// NEW: Routing for the lobby page
+app.get('/simplebet', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'simplebet.html'));
+});
+
+// NEW: Routing for the lobby page
+app.get('/advancedbet', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'advancedbet.html'));
 });
 
 // NEW: Routing for the Exprimental Study Mode page
@@ -126,10 +118,21 @@ function writeGameHistory(roomId, game) {
   // Ensure the directory exists.
   fs.mkdirSync(directory, { recursive: true });
 
-  // Create a filename using a template literal.
-  const filename = path.join(directory, `game_history_${roomId.replace('#', '_')}_${Date.now()}.json`);
-  const data = JSON.stringify(game.moveHistory, null, 2);
+  // Build a base file name using the room ID.
+  const fileBase = `game_history_${roomId.replace('#', '_')}`;
+  // List all files in the directory.
+  const files = fs.readdirSync(directory);
+  // Check if a file already exists with that base.
+  let filename = files.find(file => file.startsWith(fileBase));
+  if (filename) {
+    // Use the existing file.
+    filename = path.join(directory, filename);
+  } else {
+    // Create a new file if none exists.
+    filename = path.join(directory, `${fileBase}_${Date.now()}.json`);
+  }
 
+  const data = JSON.stringify(game.moveHistory, null, 2);
   fs.writeFile(filename, data, (err) => {
     if (err) {
       console.error("Error writing game history file:", err);
@@ -138,6 +141,7 @@ function writeGameHistory(roomId, game) {
     }
   });
 }
+
 
 
 // Start the timer for a game (3 minutes per player).
@@ -166,30 +170,32 @@ function startTimer(gameId) {
     io.to(gameId).emit('timer', { timerRed: game.timerRed, timerBlack: game.timerBlack });
   }, 1000);
 }
-
 io.on('connection', (socket) => {
   console.log('A user connected: ' + socket.id);
   const mode = socket.handshake.query.mode || 'lobby'; // default to lobby
 
-  // Lobby-related events
   if (mode === 'lobby') {
 
     // Handle lobby join event.
-    socket.on('joinLobby', (username) => {
-      socket.username = username;  // Attach the username to the socket for later use.
-      onlinePlayers[username] = socket.id;
-      console.log(`${username} joined the lobby`);
-      io.emit('playerJoined', { username });// Broadcast to all clients that a new player has joined.
+    socket.on('joinLobby', (userdata) => {
+      socket.username = userdata.username;
+      socket.mode = userdata.mode; // store betting mode from client
+      // Add to onlinePlayers mapping.
+      onlinePlayers[userdata.username] = socket.id;
+      console.log(`${userdata.username} joined the lobby with mode: ${userdata.mode}`);
+      // Broadcast that a new player joined.
+      io.emit('playerJoined', { username: userdata.username, mode: userdata.mode });
     });
 
     // Challenge event from a challenger to a target player.
     socket.on('challengePlayer', (data) => {
       // data: { challenger, target }
+      // Prevent self-challenge:
+      if (data.challenger === data.target) return;
       const targetSocketId = onlinePlayers[data.target];
       if (targetSocketId) {
         io.to(targetSocketId).emit('incomingChallenge', { challenger: data.challenger });
       } else {
-        // If target is offline, notify the challenger.
         io.to(socket.id).emit('challengeResponse', { target: data.target, accepted: false, message: "Player offline" });
       }
     });
@@ -206,10 +212,8 @@ io.on('connection', (socket) => {
         const roomId = 'room-' + Math.random().toString(36).substr(2, 9);
         const targetSocketId = onlinePlayers[data.target];
         if (targetSocketId && challengerSocketId) {
-          // Make both players join the room.
           io.sockets.sockets.get(targetSocketId).join(roomId);
           io.sockets.sockets.get(challengerSocketId).join(roomId);
-          // Notify both players to start the game.
           io.to(targetSocketId).emit('startGame', { roomId, opponent: data.challenger });
           io.to(challengerSocketId).emit('startGame', { roomId, opponent: data.target });
         }
@@ -218,11 +222,10 @@ io.on('connection', (socket) => {
 
     // Handle lobby chat messages.
     socket.on('lobbyMessage', (data) => {
-      // data should include the username and message text.
       io.emit('lobbyMessage', data);
     });
 
-    // When a client disconnects, remove them from the lobby.
+    // When a client disconnects, remove them from onlinePlayers.
     socket.on('disconnect', () => {
       if (socket.username) {
         console.log(`${socket.username} left the lobby`);
@@ -232,8 +235,9 @@ io.on('connection', (socket) => {
       console.log(`User ${socket.username} disconnected`);
     });
 
-    socket.on('setNickname', (nickname) => {
-      socket.nickname = nickname;
+    socket.on('updateBettingMode', (data) => {
+      socket.mode = data.mode;
+      console.log(`Updated betting mode for ${socket.username} to ${socket.mode}`);
     });
   }
 
@@ -407,18 +411,18 @@ io.on('connection', (socket) => {
 });
 
 
-// Periodic refresh of connected players every 10 seconds.
+
+// Periodic refresh of connected players every 5 seconds.
+// Periodic refresh: Send updated player list including mode.
 setInterval(() => {
   const players = [];
   io.of('/').sockets.forEach((socket) => {
     if (socket.username) {
-      players.push({ username: socket.username });
+      players.push({ username: socket.username, mode: socket.mode || "none" });
     }
   });
   io.emit('refreshPlayers', players);
-}, 10000);
-
-
+}, 5000);
 
 // ##############################################################################################################################################################################################
 

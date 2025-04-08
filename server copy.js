@@ -21,16 +21,6 @@ app.get('/4player', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', '4playerGame.html'));
 });// NEW: Routing for the lobby page
 
-// Existing routes and socket.io logic for the game...
-app.get('/4-player-lobby', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', '4-player-lobby.html'));
-});// NEW: Routing for the lobby page
-
-// Existing routes and socket.io logic for the game...
-app.get('/8-player-lobby', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', '8-player-lobby.html'));
-});// NEW: Routing for the lobby page
-
 app.get('/lobby', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'lobby.html'));
 });
@@ -184,7 +174,6 @@ function startTimer(gameId) {
     io.to(gameId).emit('timer', { timerRed: game.timerRed, timerBlack: game.timerBlack });
   }, 1000);
 }
-
 io.on('connection', (socket) => {
   console.log('A user connected: ' + socket.id);
   const mode = socket.handshake.query.mode || 'lobby'; // default to lobby
@@ -260,83 +249,9 @@ io.on('connection', (socket) => {
       socket.playersMode = data.playersMode;
       console.log(`Updated players mode for "${socket.username}" to ${socket.playersMode}`);
     });
-
-    
-    
-    // Global object to store active matches keyed by a matchId.
-    let activeMatches = {};
-    
-    // Inside your 'createMatch' listener in the lobby section:
-    socket.on('createMatch', (data) => {
-      // data: { title, matchBetMode, matchTime, matchNote, suggestedElo, suggestedExperience, username }
-      const matchId = 'match-' + Math.random().toString(36).substr(2, 9);
-      const username = data.username;
-      
-      // If a match already exists for this user, clear its timeout.
-      if (activeMatches[username] && activeMatches[username].timeout) {
-        clearTimeout(activeMatches[username].timeout);
-      }
-      
-      // Create a timeout to remove the match after 3 minutes (180000 ms).
-      const timeout = setTimeout(() => {
-        delete activeMatches[username];
-        io.emit('refreshMatches', Object.values(activeMatches));
-      }, 3 * 60 * 1000);
-      
-      activeMatches[username] = {
-        matchId, // Unique ID for the match
-        title: data.title,
-        matchBetMode: data.matchBetMode,
-        matchTime: data.matchTime,
-        matchNote: data.matchNote,
-        suggestedElo: data.suggestedElo,
-        suggestedExperience: data.suggestedExperience,
-        username: username, // Creator of the match
-        playersJoined: [], // List of joining players
-        createdTime: Date.now(),
-        timeout: timeout
-      };
-    
-      console.log(`Match created by ${username}: ${data.title}`);
-      
-      // Optionally, notify the creator.
-      socket.emit('matchCreated', { message: "Match created successfully." });
-      
-      // Broadcast the updated match list.
-      io.emit('refreshMatches', Object.values(activeMatches));
-    });
-    
-    // Listen for joinMatch event.
-    socket.on('joinMatch', (data) => {
-      // data: { matchId, username }
-      // In our implementation we key matches by the creator's username.
-      // For simplicity, assume matchId equals the creator's username.
-      // Otherwise, you may want to loop through activeMatches to find the matching matchId.
-      for (let key in activeMatches) {
-        const match = activeMatches[key];
-        if (match.matchId === data.matchId) {
-          // Add the joining username if not already present.
-          if (!match.playersJoined.includes(data.username)) {
-            match.playersJoined.push(data.username);
-          }
-          
-          // Broadcast the updated match list.
-          io.emit('refreshMatches', Object.values(activeMatches));
-          
-          // If the match now has 4 players, schedule deletion after a few seconds.
-          if (match.playersJoined.length >= 4) {
-            setTimeout(() => {
-              delete activeMatches[key];
-              io.emit('refreshMatches', Object.values(activeMatches));
-            }, 5000);
-          }
-          break;
-        }
-      }
-    });
   }
 
-
+  
 
   // Only if in game mode, execute pairing logic.
   if (mode === 'game') {
@@ -877,11 +792,11 @@ app.get('/admin/payments', authenticateToken, (req, res) => {
 app.post('/admin/payment/:id', authenticateToken, (req, res) => {
   const paymentId = req.params.id;
   const { action } = req.body; // Expect "approved" or "rejected"
-
+  
   if (action !== 'approved' && action !== 'rejected') {
     return res.status(400).json({ message: 'Invalid action.' });
   }
-
+  
   pool.query(
     'UPDATE transactions SET status = ? WHERE id = ?',
     [action, paymentId],

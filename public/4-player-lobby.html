@@ -71,7 +71,7 @@
     }
 
     /* Player list container */
-    #playerListContainer {
+    #matchListContainer {
       border: 1px solid #ccc;
       height: 400px;
       overflow-y: scroll;
@@ -244,13 +244,13 @@
   <div style="display: flex; justify-content: center; align-items: center; gap: 20px; margin: 1rem;">
     <fieldset>
       <legend>Player Mode</legend>
-      <button type="button" class="player-mode-button active" data-value="2player">2 players</button>
-      <button type="button" class="player-mode-button" data-value="4player">4 players</button>
+      <button type="button" class="player-mode-button" data-value="2player">2 players</button>
+      <button type="button" class="player-mode-button active" data-value="4player">4 players</button>
       <button type="button" class="player-mode-button" data-value="8player">8 players</button>
     </fieldset>
   </div>
 
-  <div id="playerListContainer">
+  <div id="matchListContainer">
     <div id="sortFilters">
       <span>Sort:</span>
       <button data-sort="username">Sort by Name</button>
@@ -305,21 +305,9 @@
 
   <div style="display: flex; justify-content: center; align-items: center; gap: 20px; margin: 1rem;">
     <input type="text" id="searchBar" placeholder="Search players...">
-    <fieldset id="bettingModeFieldset">
-      <legend>Betting Mode</legend>
-      <label>
-        <input id="noBets" type="radio" name="tool" value="none" checked> No Bets
-      </label>
-      <label>
-        <input id="simpleBets" type="radio" name="tool" value="simple"> Simple Bets
-      </label>
-      <label>
-        <input id="advacnedBets" type="radio" name="tool" value="advanced"> Advanced Bets
-      </label>
-    </fieldset>
     <!-- Green circular Plus button -->
     <button id="addMatchButton"
-      style="display: none;  background-color: #2ecc71; border: none; border-radius: 50%; width: 50px; height: 50px; font-size: 30px; color: #fff; cursor: pointer; z-index: 101;">+</button>
+      style="display: block;  background-color: #2ecc71; border: none; border-radius: 50%; width: 50px; height: 50px; font-size: 30px; color: #fff; cursor: pointer; z-index: 101;">+</button>
     <!-- Players will be listed here with Challenge buttons -->
   </div>
 
@@ -361,8 +349,10 @@
     border-color: #3498db;
   }
 </style>
-<!-- Replace the button event handlers with this script -->
+
 <script>
+
+
   document.querySelectorAll('.player-mode-button').forEach(button => {
     button.addEventListener('click', function () {
       // Remove 'active' from all buttons
@@ -381,4 +371,53 @@
       }
     });
   });
+</script>
+
+<!-- Place this script tag at the bottom of the body (after including socket.io and your other scripts) -->
+<script>
+  // const socket = io(); // Ensure you pass any required query params if needed.
+  const matchListContainer = document.getElementById('matchListContainer');
+  // const playerList = document.getElementById('playerList'); // We'll use this UL for match items.
+  // Assume you have your username stored in a variable.
+  const yourUsername = localStorage.getItem("ombgUsername") || "Anonymous";
+
+  // Listen for refreshMatches event to update the match list.
+  socket.on('refreshMatches', (matches) => {
+    // Clear the current list.
+    playerList.innerHTML = '';
+    matches.forEach(match => {
+      const li = document.createElement('li');
+      li.style.borderBottom = "1px solid #eee";
+      li.style.padding = "10px";
+      // Build match details.
+      li.innerHTML = `
+        <strong>${match.title}</strong><br>
+        Betting Mode: ${match.matchBetMode}<br>
+        Match Time: ${match.matchTime}<br>
+        Note: ${match.matchNote}<br>
+        Suggested Elo: ${match.suggestedElo}<br>
+        Suggested Experience: ${match.suggestedExperience}<br>
+        Created by: ${match.username}<br>
+        Joined (${match.playersJoined.length}/4): ${match.playersJoined.join(', ')}
+      `;
+
+      // Only show join button if less than 4 players have joined.
+      if (match.playersJoined.length < 4 && !match.playersJoined.includes(yourUsername)) {
+        const joinBtn = document.createElement('button');
+        joinBtn.textContent = 'Join';
+        joinBtn.style.marginTop = "5px";
+        joinBtn.addEventListener('click', () => {
+          socket.emit('joinMatch', { matchId: match.matchId, username: yourUsername });
+        });
+        li.appendChild(document.createElement('br'));
+        li.appendChild(joinBtn);
+      }
+
+      playerList.appendChild(li);
+    });
+  });
+  // Place this outside the io.on('connection', ...) block.
+  setInterval(() => {
+    io.emit('refreshMatches', Object.values(activeMatches));
+  }, 5000);
 </script>

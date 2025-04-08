@@ -35,15 +35,19 @@ if (playerStatsStr) {
     console.error("Error parsing playerStats:", e);
   }
 }
-
 // Determine current betting mode; default to "none"
-let bettingModeElem = document.querySelector('input[name="tool"]:checked');
+let bettingModeElem = document.querySelector('input[name="betMode"]:checked');
 let bettingMode = bettingModeElem ? bettingModeElem.value : "none";
 
-// Construct userdata with all properties and send it to the server.
+// Determine current players mode from the active player mode button; default to "none"
+let playersModeElem = document.querySelector('.player-mode-button.active');
+let playersMode = playersModeElem ? playersModeElem.getAttribute('data-value') : "none";
+
+// Construct userdata with both mode properties and send it to the server.
 let userdata = {
   username: username,
   mode: bettingMode,
+  playersMode: playersMode,
   gamesPlayed: playerStats.gamesPlayed || 0,
   gamesWon: playerStats.gamesWon || 0,
   gamesLost: playerStats.gamesLost || 0,
@@ -56,19 +60,43 @@ let userdata = {
 };
 socket.emit('joinLobby', userdata);
 
-// When the betting mode radio changes, update your mode on the server.
-// Listen for changes to the betting mode radio buttons.
-document.querySelectorAll('input[name="tool"]').forEach(radio => {
+// Listen for changes on betting mode radio buttons.
+document.querySelectorAll('input[name="betMode"]').forEach(radio => {
   radio.addEventListener('change', function () {
-    const newMode = this.value;
-    // Emit the updated betting mode to the server.
-    socket.emit('updateBettingMode', { mode: newMode });
-    console.log("Betting mode updated to:", newMode);
-    // Update the local filtering if necessary.
+    const newBettingMode = this.value;
+    socket.emit('updateBettingMode', { mode: newBettingMode });
+    console.log("Betting mode updated to:", newBettingMode);
     renderPlayers();
   });
 });
 
+// Listen for clicks on player mode buttons.
+document.querySelectorAll('.player-mode-button').forEach(button => {
+  button.addEventListener('click', function() {
+    // Remove active styling from all buttons.
+    document.querySelectorAll('.player-mode-button').forEach(btn => btn.classList.remove('active'));
+    // Set active styling on the clicked button.
+    this.classList.add('active');
+    
+    const newPlayersMode = this.getAttribute('data-value');
+    socket.emit('updatePlayersMode', { playersMode: newPlayersMode });
+    console.log("Players mode updated to:", newPlayersMode);
+    renderPlayers();
+  });
+});
+
+// When rendering players, you can continue to filter by betting mode (or update as needed)
+function renderPlayers() {
+  const bettingModeElem = document.querySelector('input[name="tool"]:checked');
+  const selectedBettingMode = bettingModeElem ? bettingModeElem.value : "none";
+  const query = searchBar.value.trim().toLowerCase();
+  const filteredPlayers = playersData.filter(player =>
+    player.mode === selectedBettingMode && player.username !== username &&
+    player.username.toLowerCase().includes(query)
+  );
+  playerList.innerHTML = '';
+  filteredPlayers.forEach(player => addPlayer(player));
+}
 
 // ------------------------------
 // Player List Rendering
@@ -94,37 +122,6 @@ function addPlayer(player) {
 
   li.appendChild(challengeBtn);
   playerList.appendChild(li);
-}
-
-// function renderPlayers() {
-//   // Read the current betting mode from the radio group.
-//   const selectedMode = document.querySelector('input[name="tool"]:checked').value;
-//   // Filter playersData to only those with the same mode and that are not you.
-//   const filteredPlayers = playersData.filter(player => player.mode === selectedMode && player.username !== username);
-
-//   // (Optionally) Apply search filtering.
-//   const query = searchBar.value.trim().toLowerCase();
-//   const finalPlayers = filteredPlayers.filter(player =>
-//     player.username.toLowerCase().includes(query)
-//   );
-
-//   // Optionally, add sorting here if needed.
-//   // For now, we simply clear and render.
-//   playerList.innerHTML = '';
-//   finalPlayers.forEach(player => addPlayer(player));
-// }
-
-
-// Render players based on selected betting mode and search.
-function renderPlayers() {
-  const selectedMode = document.querySelector('input[name="tool"]:checked').value;
-  const query = searchBar.value.trim().toLowerCase();
-  const filteredPlayers = playersData.filter(player =>
-    player.mode === selectedMode && player.username !== username &&
-    player.username.toLowerCase().includes(query)
-  );
-  playerList.innerHTML = '';
-  filteredPlayers.forEach(player => addPlayer(player));
 }
 
 // Socket event for refreshed player list.
@@ -188,8 +185,6 @@ socket.on('lobbyMessage', (data) => {
 // ------------------------------
 // Challenge Request Handling
 // ------------------------------
-
-// Incoming challenge: Only prompt if you're not the challenger.
 socket.on('incomingChallenge', (data) => {
   if (data.challenger === username) return; // ignore your own challenge.
   if (confirm(`You have been challenged by ${data.challenger}. Accept challenge?`)) {
@@ -210,17 +205,90 @@ socket.on('challengeResponse', (data) => {
 
 // Start game event.
 socket.on('startGame', (data) => {
-  // Get the current betting mode from the radio buttons.
-  const currentMode = document.querySelector('input[name="tool"]:checked').value;
-  
-  if (currentMode === "none") {
+  // Get the current betting mode from the betting mode radio buttons.
+  const selectedBettingMode = document.querySelector('input[name="betMode"]:checked').value;
+
+  if (selectedBettingMode === "none") {
     alert(`Starting game with ${data.opponent}.`);
     window.location.href = `game.html?roomId=${data.roomId}`;
-  } else if (currentMode === "simple") {
+  } else if (selectedBettingMode === "simple") {
     alert(`Place bets on game with ${data.opponent}.`);
     window.location.href = `simplebet?roomId=${data.roomId}`;
-  } else if (currentMode === "advanced") {
+  } else if (selectedBettingMode === "advanced") {
     alert(`Placing wagers and bets game with ${data.opponent}.`);
     window.location.href = `advancedbet?roomId=${data.roomId}`;
   }
+});
+// Listen for clicks on player mode buttons.
+document.querySelectorAll('.player-mode-button').forEach(button => {
+  button.addEventListener('click', function() {
+    // Remove active styling from all buttons.
+    document.querySelectorAll('.player-mode-button').forEach(btn => btn.classList.remove('active'));
+    // Set active styling on the clicked button.
+    this.classList.add('active');
+    
+    const newPlayersMode = this.getAttribute('data-value');
+    socket.emit('updatePlayersMode', { playersMode: newPlayersMode });
+    console.log("Players mode updated to:", newPlayersMode);
+    
+    // Update UI based on selected mode.
+    if(newPlayersMode === '4player' || newPlayersMode === '8player'){
+      // Change search bar placeholder.
+      document.getElementById('searchBar').placeholder = "Search Matches";
+      // Hide Betting Mode fieldset.
+      document.getElementById('bettingModeFieldset').style.display = 'none';
+      // Hide sort filters.
+      document.getElementById('sortFilters').style.display = 'none';
+      // Show plus button to trigger match creation form.
+      document.getElementById('addMatchButton').style.display = 'block';
+    } else {
+      // Revert search bar placeholder.
+      document.getElementById('searchBar').placeholder = "Search players...";
+      // Show Betting Mode fieldset.
+      document.getElementById('bettingModeFieldset').style.display = 'flex';
+      // Show sort filters.
+      document.getElementById('sortFilters').style.display = 'flex';
+      // Hide plus button and match creation overlay.
+      document.getElementById('addMatchButton').style.display = 'none';
+      document.getElementById('matchCreationOverlay').style.display = 'none';
+    }
+    
+    renderPlayers();
+  });
+});
+
+// Listener to toggle the match creation overlay
+document.getElementById('addMatchButton').addEventListener('click', function(){
+  const matchForm = document.getElementById('matchCreationOverlay');
+  matchForm.style.display = (matchForm.style.display === 'block') ? 'none' : 'block';
+});
+
+// Listener for create match button.
+document.getElementById('createMatchButton').addEventListener('click', function(){
+  const title = document.getElementById('matchTitle').value.trim();
+  const betModeElem = document.querySelector('input[name="matchBetMode"]:checked');
+  const matchBetMode = betModeElem ? betModeElem.value : 'none';
+  const matchTime = document.getElementById('matchTime').value.trim();
+  const matchNote = document.getElementById('matchNote').value.trim();
+  const suggestedElo = document.getElementById('suggestedElo').value.trim();
+  const suggestedExperience = document.getElementById('suggestedExperience').value;
+  const username = localStorage.getItem("ombgUsername");
+  
+  if(title === ''){
+    alert("Please enter a match title.");
+    return;
+  }
+  // Emit or process match creation:
+  socket.emit('createMatch', { 
+    title, 
+    matchBetMode, 
+    matchTime, 
+    matchNote, 
+    suggestedElo, 
+    suggestedExperience,
+    username
+  });
+  alert("Match created!");
+  // Optionally, hide the overlay after creation.
+  document.getElementById('matchCreationOverlay').style.display = 'none';
 });

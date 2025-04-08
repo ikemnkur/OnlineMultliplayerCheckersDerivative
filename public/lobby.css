@@ -92,3 +92,64 @@ header {
   margin-bottom: 2rem;
 }
   
+
+/* Modal overlay for match creation */
+#matchCreationOverlay {
+  display: none;
+  position: absolute;
+  bottom: 70px;
+  right: 20px;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 20px;
+  width: 300px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.3);
+  z-index: 100;
+  text-align: left;
+  font-size: 14px;
+  color: #333;
+}
+#matchCreationOverlay h4 {
+  margin-top: 0;
+  color: #3498db;
+  font-size: 18px;
+}
+#matchCreationOverlay label {
+  display: block;
+  margin-bottom: 10px;
+}
+#matchCreationOverlay label input[type="text"],
+#matchCreationOverlay label input[type="datetime-local"],
+#matchCreationOverlay label input[type="number"],
+#matchCreationOverlay label textarea,
+#matchCreationOverlay label select {
+  width: 100%;
+  padding: 5px;
+  margin-top: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+#matchCreationOverlay fieldset {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  padding: 10px;
+}
+#matchCreationOverlay fieldset legend {
+  font-weight: bold;
+  padding: 0 5px;
+}
+#matchCreationOverlay button {
+  background: #2ecc71;
+  color: #fff;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+#matchCreationOverlay button:hover {
+  background: #27ae60;
+}

@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Experimental Study Mode</title>
+    <!-- <link rel="stylesheet" href="experimental.css"> -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f9f9f9;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+        }
+
+        header {
+            background: #3498db;
+            color: #fff;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 0 10px;
+        }
+
+        canvas {
+            border: 1px solid #333;
+            background: #fff;
+            margin-bottom: 10px;
+        }
+
+        #controls {
+            margin: 10px 0;
+        }
+
+        fieldset {
+            border: 1px solid #ccc;
+            padding: 10px;
+            display: inline-block;
+        }
+
+        legend {
+            font-weight: bold;
+        }
+
+        #pieceColorSelection button {
+            margin: 0 5px;
+            padding: 5px 10px;
+        }
+
+        #scoreArea {
+            margin: 10px 0;
+        }
+
+        #scoreDisplay {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        #moveHistoryContainer {
+            background: #eee;
+            padding: 10px;
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        #moveHistoryList {
+            list-style: none;
+            padding: 0;
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 0;
+        }
+
+        #moveHistoryList li {
+            padding: 5px;
+            border-bottom: 1px solid #ccc;
+            cursor: pointer;
+        }
+
+        #historyNav {
+            margin-top: 10px;
+        }
+
+        #historyNav button {
+            margin-right: 10px;
+            padding: 5px 10px;
+        }
+
+        #externalHistory {
+            margin-top: 10px;
+        }
+
+        #externalHistory textarea {
+            width: 100%;
+            height: 100px;
+        }
+
+        #bottomControls {
+            margin-top: 10px;
+        }
+
+        #bottomControls button {
+            margin: 5px;
+            padding: 8px 12px;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Experimental Study Mode (4-Player)</h1>
+        <p>Test hypothetical scenarios by moving, adding, or removing pieces freely.</p>
+    </header>
+    <div class="container">
+        <nav>
+            <a href="/lobby">Go to Lobby</a>
+            <a href="/payments">Buy Coins</a>
+            <a href="/profile">Go to Profile</a>
+        </nav>
+        <canvas id="expCanvas" width="600" height="600"></canvas>
+        <div id="controls">
+            <fieldset>
+                <legend>Tool</legend>
+                <label>
+                    <input type="radio" name="tool" value="move" checked> Move
+                </label>
+                <label>
+                    <input type="radio" name="tool" value="add"> Add
+                </label>
+                <label>
+                    <input type="radio" name="tool" value="remove"> Remove
+                </label>
+                <label style="gap: 10px">
+
+                </label>
+                <button id="undoButton" style="float: right; padding: 5px; margin: -5px 10px 0px 10px;">Undo</button>
+            </fieldset>
+            <div id="pieceColorSelection" style="display: none;">
+                <button id="addRed">Add Red</button>
+                <button id="addBlue">Add Blue</button>
+                <button id="addGreen">Add Green</button>
+                <button id="addYellow">Add Yellow</button>
+            </div>
+        </div>
+        <div id="scoreArea">
+            <p id="scoreDisplay">Score: N/A</p>
+        </div>
+        <div id="moveHistoryContainer">
+            <h3>Move History</h3>
+            <ul id="moveHistoryList">
+                <!-- Moves will be listed here; clicking a move resets the board state to that move -->
+            </ul>
+            <div id="historyNav">
+                <button id="prevMove">
+                    << Previous</button>
+                        <button id="nextMove">Next >></button>
+                        <button id="autoPlay">Auto Play</button>
+                        <button id="clearBtn" style="float: right;">Clear</button>
+                        <button id="resetBtn" style="float: right;">Reset</button>
+            </div>
+            <div id="externalHistory">
+                <textarea id="historyTextarea" placeholder="Paste move history JSON here..."></textarea>
+                <button id="loadHistory">Load History</button>
+            </div>
+        </div>
+        <div id="bottomControls">
+            <button id="newGameButton">New Game</button>
+            <button id="copyButton">Copy/Share Game</button>
+        </div>
+    </div>
+    <!-- <script src="experimental.js"></script> -->
+</body>
+
+<script>
+    // experimental.js
+
+    // For experimental mode, no online play is involved.
+    // This is a standalone single-player simulation for the 4-player variant.
+
+    let board = [];           // Current board state (8x8)
+    const gridSize = 8;
+    const canvas = document.getElementById('expCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const moveHistoryList = document.getElementById('moveHistoryList');
+
+    // Control buttons.
+    const prevMoveBtn = document.getElementById('prevMove');
+    const nextMoveBtn = document.getElementById('nextMove');
+    const autoPlayBtn = document.getElementById('autoPlay');
+    const clearBtn = document.getElementById('clearBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const newGameBtn = document.getElementById('newGameButton');
+    const copyBtn = document.getElementById('copyButton');
+    const loadHistoryBtn = document.getElementById('loadHistory');
+    const historyTextarea = document.getElementById('historyTextarea');
+
+    // Tool-related elements.
+    const toolRadios = document.getElementsByName('tool');
+    const pieceColorSelection = document.getElementById('pieceColorSelection');
+    const addRedBtn = document.getElementById('addRed');
+    const addBlueBtn = document.getElementById('addBlue');
+    const addGreenBtn = document.getElementById('addGreen');
+    const addYellowBtn = document.getElementById('addYellow');
+
+    let currentTool = "move";   // "move", "add", or "remove"
+    let selectedPiece = null;   // for moving
+    let selectedAddColor = "red"; // default for add tool
+
+    let moveHistory = [];       // Array to record moves: { tool, from, to, timestamp, (addColor) }
+    let startTime = Date.now(); // Experiment start time
+
+    // Preview mode variables.
+    let previewMode = false;
+    let previewIndex = 0;
+    let initialBoard = createInitialBoard(); // Set up the 4-player initial board
+
+    // Initialize board.
+    board = cloneBoard(initialBoard);
+    drawBoard();
+    updateScoreDisplay();
+    updateMoveHistoryDisplay();
+
+    // ----------------------- Utility Functions -----------------------
+
+    // Create initial board for 4-player experimental mode.
+    // Layout: Red pieces on bottom row (row 7, columns 2-5),
+    // Blue pieces on top row (row 0, columns 2-5),
+    // Green pieces on right column (col 7, rows 2-5),
+    // Yellow pieces on left column (col 0, rows 2-5).
+    function createInitialBoard() {
+        let board = Array(gridSize).fill().map(() => Array(gridSize).fill(null));
+        for (let c = 2; c <= 5; c++) {
+            board[7][c] = { color: 'red', king: false };
+        }
+        board[6][3] = { color: 'red', king: false };
+        board[6][4] = { color: 'red', king: false };
+        for (let c = 2; c <= 5; c++) {
+            board[0][c] = { color: 'blue', king: false };
+        }
+        board[1][4] = { color: 'blue', king: false };
+        board[1][3] = { color: 'blue', king: false };
+        for (let r = 2; r <= 5; r++) {
+            board[r][7] = { color: 'green', king: false };
+        }
+        board[3][6] = { color: 'green', king: false };
+        board[4][6] = { color: 'green', king: false };
+        for (let r = 2; r <= 5; r++) {
+            board[r][0] = { color: 'yellow', king: false };
+        }
+        board[4][1] = { color: 'yellow', king: false };
+        board[3][1] = { color: 'yellow', king: false };
+        return board;
+    }
+
+    function cloneBoard(board) {
+        return JSON.parse(JSON.stringify(board));
+    }
+
+    function resetBoard() {
+        if (confirm("Are you sure you want to reset the board?")) {
+            board = createInitialBoard();
+            moveHistory = [];
+            moveHistoryList.innerHTML = "";
+        }
+    }
+
+    // Score calculation for 4-player mode.
+    // Red: score = sum((8 - row)^2)
+    // Blue: score = sum((row + 1)^2)
+    // Green: score = sum((8 - col)^2)
+    // Yellow: score = sum((col + 1)^2)
+    function computeScoresLocal(simBoard) {
+        let scores = { red: 0, blue: 0, green: 0, yellow: 0 };
+        for (let r = 0; r < gridSize; r++) {
+            for (let c = 0; c < gridSize; c++) {
+                const piece = simBoard[r][c];
+                if (piece) {
+                    if (piece.color === 'red') {
+                        scores.red += Math.pow(8 - r, 2);
+                    } else if (piece.color === 'blue') {
+                        scores.blue += Math.pow(r + 1, 2);
+                    } else if (piece.color === 'green') {
+                        scores.green += Math.pow(8 - c, 2);
+                    } else if (piece.color === 'yellow') {
+                        scores.yellow += Math.pow(c + 1, 2);
+                    }
+                }
+            }
+        }
+        return scores;
+    }
+
+    function updateScoreDisplay() {
+        let scores = computeScoresLocal(board);
+        scoreDisplay.innerText = `Scores -> Red: ${scores.red}   Blue: ${scores.blue}   Green: ${scores.green}   Yellow: ${scores.yellow}`;
+    }
+
+    function drawBoard() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const cellSize = canvas.width / gridSize;
+        for (let r = 0; r < gridSize; r++) {
+            for (let c = 0; c < gridSize; c++) {
+                ctx.fillStyle = ((r + c) % 2 === 1) ? "#769656" : "#EEEED2";
+                ctx.fillRect(c * cellSize, r * cellSize, cellSize, cellSize);
+                ctx.strokeStyle = "#ccc";
+                ctx.strokeRect(c * cellSize, r * cellSize, cellSize, cellSize);
+            }
+        }
+        for (let r = 0; r < gridSize; r++) {
+            for (let c = 0; c < gridSize; c++) {
+                const piece = board[r][c];
+                if (piece) {
+                    ctx.beginPath();
+                    ctx.arc(c * cellSize + cellSize / 2, r * cellSize + cellSize / 2, cellSize / 2 - 5, 0, Math.PI * 2);
+                    ctx.fillStyle = piece.color;
+                    ctx.fill();
+                }
+            }
+        }
+        // Highlight selected piece.
+        if (selectedPiece) {
+            ctx.strokeStyle = "yellow";
+            ctx.lineWidth = 3;
+            ctx.strokeRect(selectedPiece.col * cellSize, selectedPiece.row * cellSize, cellSize, cellSize);
+        }
+    }
+
+    function updateMoveHistoryDisplay() {
+        moveHistoryList.innerHTML = "";
+        moveHistory.forEach((move, index) => {
+            let li = document.createElement("li");
+            li.textContent = `${move.timestamp}s - ${move.tool.toUpperCase()} `;
+            if (move.tool === "move") {
+                li.textContent += `from (${move.from.row},${move.from.col}) to (${move.to.row},${move.to.col})`;
+            } else if (move.tool === "add") {
+                li.textContent += `Added ${move.addColor} at (${move.to.row},${move.to.col})`;
+            } else if (move.tool === "remove") {
+                li.textContent += `Removed from (${move.from.row},${move.from.col})`;
+            }
+            li.addEventListener('click', () => {
+                previewMode = true;
+                previewIndex = index;
+                resetBoardToMove(index);
+            });
+            moveHistoryList.appendChild(li);
+        });
+    }
+
+    // Replay moves from initialBoard up to a given index.
+    function resetBoardToMove(index) {
+        board = cloneBoard(initialBoard);
+        for (let i = 0; i <= index; i++) {
+            const move = moveHistory[i];
+            if (move.tool === "move") {
+                board[move.to.row][move.to.col] = board[move.from.row][move.from.col];
+                board[move.from.row][move.from.col] = null;
+            } else if (move.tool === "add") {
+                board[move.to.row][move.to.col] = { color: move.addColor, king: false };
+            } else if (move.tool === "remove") {
+                board[move.from.row][move.from.col] = null;
+            }
+        }
+        drawBoard();
+        updateScoreDisplay();
+    }
+
+    function recordMove(tool, from, to, addColor) {
+        const timestamp = Math.floor((Date.now() - startTime) / 1000);
+        let move = { tool, from, to, timestamp };
+        if (tool === "add") {
+            move.addColor = addColor;
+        }
+        moveHistory.push(move);
+        updateMoveHistoryDisplay();
+    }
+
+    function undoLastMove() {
+        if (moveHistory.length === 0) {
+            alert("No moves to undo.");
+            return;
+        }
+        // Remove the last move.
+        moveHistory.pop();
+        updateMoveHistoryDisplay();
+
+        // Reset the board to the initial configuration and reapply remaining moves.
+        board = cloneBoard(initialBoard);
+        for (let i = 0; i < moveHistory.length; i++) {
+            const move = moveHistory[i];
+            if (move.tool === "move") {
+                board[move.to.row][move.to.col] = board[move.from.row][move.from.col];
+                board[move.from.row][move.from.col] = null;
+            } else if (move.tool === "add") {
+                board[move.to.row][move.to.col] = { color: move.addColor, king: false };
+            } else if (move.tool === "remove") {
+                board[move.from.row][move.from.col] = null;
+            }
+        }
+        drawBoard();
+        updateScoreDisplay();
+    }
+
+    // ----------------------- Event Handlers -----------------------
+
+    canvas.addEventListener('click', (e) => {
+        if (previewMode) return;  // Ignore clicks in preview mode.
+        const cellSize = canvas.width / gridSize;
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const col = Math.floor(x / cellSize);
+        const row = Math.floor(y / cellSize);
+
+        if (currentTool === "move") {
+            if (!selectedPiece) {
+                if (board[row][col]) {
+                    selectedPiece = { row, col };
+                    drawBoard();
+                }
+            } else {
+                // If clicking on the same square as the selected piece, deselect it.
+                if (selectedPiece.row === row && selectedPiece.col === col) {
+                    selectedPiece = null;
+                    drawBoard();
+                    return;
+                }
+                // Before moving, check if destination is empty.
+                if (board[row][col]) {
+                    alert("That square is not empty!");
+                    return;
+                }
+                const from = selectedPiece;
+                const to = { row, col };
+                recordMove("move", from, to);
+                board[to.row][to.col] = board[from.row][from.col];
+                board[from.row][from.col] = null;
+                selectedPiece = null;
+                drawBoard();
+                updateScoreDisplay();
+            }
+        } else if (currentTool === "add") {
+            if (!board[row][col]) {
+                board[row][col] = { color: selectedAddColor, king: false };
+                recordMove("add", { row: -1, col: -1 }, { row, col }, selectedAddColor);
+                drawBoard();
+                updateScoreDisplay();
+            }
+        } else if (currentTool === "remove") {
+            if (board[row][col]) {
+                recordMove("remove", { row, col }, { row: -1, col: -1 });
+                board[row][col] = null;
+                drawBoard();
+                updateScoreDisplay();
+            }
+        }
+    });
+
+
+    // Tool selection.
+    // let currentTool = "move";
+    // let selectedAddColor = "red";
+    document.querySelectorAll('input[name="tool"]').forEach(radio => {
+        radio.addEventListener('change', function () {
+            currentTool = this.value;
+            selectedPiece = null;
+            document.getElementById('pieceColorSelection').style.display = (currentTool === 'add') ? 'inline-block' : 'none';
+        });
+    });
+
+    // Piece color selection for adding.
+    addRedBtn.addEventListener('click', () => { selectedAddColor = 'red'; });
+    addBlueBtn.addEventListener('click', () => { selectedAddColor = 'blue'; });
+    addGreenBtn.addEventListener('click', () => { selectedAddColor = 'green'; });
+    addYellowBtn.addEventListener('click', () => { selectedAddColor = 'yellow'; });
+
+    // Preview navigation.
+    prevMoveBtn.addEventListener('click', () => {
+        if (previewMode && previewIndex > 0) {
+            previewIndex--;
+            resetBoardToMove(previewIndex);
+        }
+    });
+    nextMoveBtn.addEventListener('click', () => {
+        if (previewMode && previewIndex < moveHistory.length - 1) {
+            previewIndex++;
+            resetBoardToMove(previewIndex);
+        }
+    });
+    autoPlayBtn.addEventListener('click', () => {
+        if (!previewMode) previewMode = true;
+        let interval = setInterval(() => {
+            if (previewIndex >= moveHistory.length - 1) {
+                clearInterval(interval);
+                return;
+            }
+            previewIndex++;
+            resetBoardToMove(previewIndex);
+        }, 1000);
+    });
+    clearBtn.addEventListener('click', () => {
+        if (confirm("Are you sure you want to clear the move history?")) {
+            moveHistory = [];
+            moveHistoryList.innerHTML = "";
+        }
+    });
+    resetBtn.addEventListener('click', () => {
+        resetBoard()
+    });
+    loadHistoryBtn.addEventListener('click', () => {
+        try {
+            let parsed = JSON.parse(historyTextarea.value);
+            if (Array.isArray(parsed)) {
+                previewMode = true;
+                moveHistory = parsed;
+                previewIndex = moveHistory.length - 1;
+                initialBoard = createInitialBoard();
+                resetBoardToMove(previewIndex);
+                updateMoveHistoryDisplay();
+            } else {
+                alert("Invalid move history format.");
+            }
+        } catch (e) {
+            alert("Error parsing move history JSON.");
+        }
+    });
+    newGameBtn.addEventListener('click', () => { location.reload(); });
+    copyBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(JSON.stringify(moveHistory, null, 2))
+            .then(() => alert("Move history copied to clipboard!"))
+            .catch(err => alert("Failed to copy: " + err));
+    });
+
+    document.getElementById('undoButton').addEventListener('click', undoLastMove);
+
+
+</script>
+
+</html>

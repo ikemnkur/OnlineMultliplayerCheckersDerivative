@@ -121,6 +121,7 @@
             <a href="/payments">Buy Coins</a>
             <a href="/profile">Go to Profile</a>
         </nav>
+        <p id="coordsDisplay">Coordinates: (0, 0)</p>
         <canvas id="expCanvas" width="600" height="600"></canvas>
         <div id="controls">
             <fieldset>
@@ -138,6 +139,7 @@
 
                 </label>
                 <button id="undoButton" style="float: right; padding: 5px; margin: -5px 10px 0px 10px;">Undo</button>
+                
             </fieldset>
             <div id="pieceColorSelection" style="display: none;">
                 <button id="addRed">Add Red</button>
@@ -161,6 +163,7 @@
                         <button id="autoPlay">Auto Play</button>
                         <button id="clearBtn" style="float: right;">Clear</button>
                         <button id="resetBtn" style="float: right;">Reset</button>
+                        <button id="togglePreviewMode" style="float: right;">Toggle Preview Mode</button>
             </div>
             <div id="externalHistory">
                 <textarea id="historyTextarea" placeholder="Paste move history JSON here..."></textarea>
@@ -194,6 +197,7 @@
     const autoPlayBtn = document.getElementById('autoPlay');
     const clearBtn = document.getElementById('clearBtn');
     const resetBtn = document.getElementById('resetBtn');
+    const togglePreviewModeBtn = document.getElementById('togglePreviewMode');
     const newGameBtn = document.getElementById('newGameButton');
     const copyBtn = document.getElementById('copyButton');
     const loadHistoryBtn = document.getElementById('loadHistory');
@@ -334,13 +338,14 @@
         moveHistoryList.innerHTML = "";
         moveHistory.forEach((move, index) => {
             let li = document.createElement("li");
-            li.textContent = `${move.timestamp}s - ${move.tool.toUpperCase()} `;
+            li.textContent = `${move.timestamp}s - ${move.tool.toUpperCase()}`;
             if (move.tool === "move") {
-                li.textContent += `from (${move.from.row},${move.from.col}) to (${move.to.row},${move.to.col})`;
+                // Append the moving piece’s color if available.
+                li.textContent += ` (${move.color}) from (${move.from.row},${move.from.col}) to (${move.to.row},${move.to.col})`;
             } else if (move.tool === "add") {
-                li.textContent += `Added ${move.addColor} at (${move.to.row},${move.to.col})`;
+                li.textContent += ` Added ${move.addColor} at (${move.to.row},${move.to.col})`;
             } else if (move.tool === "remove") {
-                li.textContent += `Removed from (${move.from.row},${move.from.col})`;
+                li.textContent += ` Removed from (${move.from.row},${move.from.col})`;
             }
             li.addEventListener('click', () => {
                 previewMode = true;
@@ -372,9 +377,11 @@
     function recordMove(tool, from, to, addColor) {
         const timestamp = Math.floor((Date.now() - startTime) / 1000);
         let move = { tool, from, to, timestamp };
-        if (tool === "add") {
-            move.addColor = addColor;
+        if (tool === "move") {
+            // Assume board[from.row][from.col] exists and contains the moving piece.
+            move.color = board[from.row][from.col].color;
         }
+        if (tool === "add") move.addColor = addColor;
         moveHistory.push(move);
         updateMoveHistoryDisplay();
     }
@@ -511,6 +518,9 @@
     resetBtn.addEventListener('click', () => {
         resetBoard()
     });
+    togglePreviewModeBtn.addEventListener('click', () => {
+        previewMode = !previewMode;
+    });
     loadHistoryBtn.addEventListener('click', () => {
         try {
             let parsed = JSON.parse(historyTextarea.value);
@@ -538,6 +548,421 @@
     document.getElementById('undoButton').addEventListener('click', undoLastMove);
 
 
+</script>
+
+<script>
+    // Define the board grid size.
+    // const gridSize = 8;
+
+    // Return true if (row, col) lies within board boundaries.
+    function isWithinBounds(row, col) {
+        return row >= 0 && row < gridSize && col >= 0 && col < gridSize;
+    }
+
+    // For the 4–player mode, define movement offsets for each color.
+    // Here, each player's "forward" direction and associated diagonals are defined.
+    function getMoveOffsets(color) {
+        switch (color) {
+            case 'red':
+                // Red moves upward.
+                return {
+                    forward: { row: -1, col: 0 },
+                    sideways: [{ row: 0, col: -1 }, { row: 0, col: 1 }],
+                    diagonals: [{ row: -1, col: -1 }, { row: -1, col: 1 }]
+                };
+            case 'blue':
+                // Blue moves to the right.
+                return {
+                    forward: { row: 0, col: 1 },
+                    sideways: [{ row: -1, col: 0 }, { row: 1, col: 0 }],
+                    diagonals: [{ row: -1, col: 1 }, { row: 1, col: 1 }]
+                };
+            case 'yellow':
+                // yellow moves downward.
+                return {
+                    forward: { row: 1, col: 0 },
+                    sideways: [{ row: 0, col: -1 }, { row: 0, col: 1 }],
+                    diagonals: [{ row: 1, col: -1 }, { row: 1, col: 1 }]
+                };
+            case 'green':
+                // Green moves to the left.
+                return {
+                    forward: { row: 0, col: -1 },
+                    sideways: [{ row: -1, col: 0 }, { row: 1, col: 0 }],
+                    diagonals: [{ row: -1, col: -1 }, { row: 1, col: -1 }]
+                };
+            default:
+                return null;
+        }
+    }
+
+    // Generate all legal moves for a given board and player.
+    // Each move is an object: { from: {row, col}, to: {row, col}, moveType: "move" or "capture" }
+    function getAllLegalMoves(board, playerColor) {
+        const moves = [];
+        const offsets = getMoveOffsets(playerColor);
+        for (let r = 0; r < gridSize; r++) {
+            for (let c = 0; c < gridSize; c++) {
+                if (board[r][c] && board[r][c].color === playerColor) {
+                    // Simple moves: forward and sideways.
+                    const basicMoves = [offsets.forward, ...offsets.sideways];
+                    basicMoves.forEach(dir => {
+                        const newRow = r + dir.row;
+                        const newCol = c + dir.col;
+                        if (isWithinBounds(newRow, newCol) && board[newRow][newCol] === null) {
+                            moves.push({ from: { row: r, col: c }, to: { row: newRow, col: newCol }, moveType: "move" });
+                        }
+                    });
+                    // Capturing moves: jump diagonally.
+                    offsets.diagonals.forEach(diag => {
+                        const newRow = r + 2 * diag.row;
+                        const newCol = c + 2 * diag.col;
+                        const midRow = r + diag.row;
+                        const midCol = c + diag.col;
+                        if (isWithinBounds(newRow, newCol) && board[newRow][newCol] === null) {
+                            // Check if there is an opponent piece in the middle.
+                            if (board[midRow][midCol] && board[midRow][midCol].color !== playerColor) {
+                                moves.push({ from: { row: r, col: c }, to: { row: newRow, col: newCol }, moveType: "capture" });
+                            }
+                        }
+                    });
+                }
+            }
+        }
+        return moves;
+    }
+
+    // A simple evaluation function that returns the score for the current player's color.
+    // Scoring: red: score = sum((8 - row)^2), yellow: score = sum((row+1)^2),
+    // blue: score = sum((8 - col)^2), green: score = sum((col+1)^2).
+    function evaluateBoard(board, playerColor) {
+        let score = 0;
+        for (let r = 0; r < gridSize; r++) {
+            for (let c = 0; c < gridSize; c++) {
+                const piece = board[r][c];
+                if (piece) {
+                    if (piece.color === playerColor) {
+                        if (playerColor === 'red') score += Math.pow(8 - r, 2);
+                        else if (playerColor === 'yellow') score += Math.pow(r + 1, 2);
+                        else if (playerColor === 'blue') score += Math.pow(8 - c, 2);
+                        else if (playerColor === 'green') score += Math.pow(c + 1, 2);
+                    }
+                }
+            }
+        }
+        return score;
+    }
+
+    // Depth-limited search with time limit using a simple max-n approach.
+    // turnOrder is an array containing the colors in order: ['red','blue','yellow','green'].
+    // Returns an object: { move: bestMove, score: bestScore } for the current player.
+    // function search(board, currentPlayer, depth, timeLimit, startTime, turnOrder) {
+    //     // If depth is 0 or time limit exceeded, return evaluation for current player.
+    //     if (depth === 0 || (Date.now() - startTime) >= timeLimit) {
+    //         return { score: evaluateBoard(board, currentPlayer) };
+    //     }
+    //     let legalMoves = getAllLegalMoves(board, currentPlayer);
+    //     if (legalMoves.length === 0) {
+    //         // No moves available: return evaluation.
+    //         return { score: evaluateBoard(board, currentPlayer) };
+    //     }
+    //     let best = { score: -Infinity, move: null };
+    //     for (let move of legalMoves) {
+    //         // Clone board and apply move.
+    //         let newBoard = JSON.parse(JSON.stringify(board));
+    //         newBoard[move.to.row][move.to.col] = newBoard[move.from.row][move.from.col];
+    //         newBoard[move.from.row][move.from.col] = null;
+    //         // If it's a capture, remove the opponent piece located in the middle.
+    //         if (move.moveType === "capture") {
+    //             const diagRow = (move.from.row + move.to.row) / 2;
+    //             const diagCol = (move.from.col + move.to.col) / 2;
+    //             newBoard[diagRow][diagCol] = null;
+    //         }
+    //         // Determine next player in turn order.
+    //         let currentIndex = turnOrder.indexOf(currentPlayer);
+    //         let nextIndex = (currentIndex + 1) % turnOrder.length;
+    //         let nextPlayer = turnOrder[nextIndex];
+    //         let result = search(newBoard, nextPlayer, depth - 1, timeLimit, startTime, turnOrder);
+    //         // For a rough estimate, we focus on maximizing current player's score.
+    //         if (result.score > best.score) {
+    //             best.score = result.score;
+    //             best.move = move;
+    //         }
+    //     }
+    //     return best;
+    // }
+
+    // Wrapper function to find the best move for current player given the board, player color,
+    // depth, and time limit. It checks first for winning moves and "high-delta" capturing moves.
+    // function findBestMove(board, playerColor, depth, timeLimit) {
+    //     let legalMoves = getAllLegalMoves(board, playerColor);
+
+    //     // Define winning zones for each player:
+    //     // red: win if move.to.row === 0,
+    //     // blue: win if move.to.col === 7,
+    //     // black: win if move.to.row === 7,
+    //     // green: win if move.to.col === 0.
+    //     function isWinningMove(move, color) {
+    //         if (color === 'red' && move.to.row === 0 && move.moveType === "capture") return true;
+    //         if (color === 'blue' && move.to.col === 7 && move.moveType === "capture") return true;
+    //         if (color === 'black' && move.to.row === 7 && move.moveType === "capture") return true;
+    //         if (color === 'green' && move.to.col === 0 && move.moveType === "capture") return true;
+    //         return false;
+    //     }
+
+    //     // First, update each move's moveType (if not already updated) by generating the moves.
+    //     // (Assume getAllLegalMoves already returns moves with moveType = "move" or "capture".)
+
+    //     // Check for an immediate winning capture.
+    //     for (let move of legalMoves) {
+    //         if (isWinningMove(move, playerColor)) {
+    //             return move;
+    //         }
+    //     }
+
+    //     // Calculate current evaluation using your evaluation function.
+    //     let currentEval = evaluateBoard(board, playerColor);
+    //     let bestMove = null;
+    //     let bestDelta = -Infinity;
+
+    //     // For each legal move, simulate the move and compute the evaluation delta.
+    //     for (let move of legalMoves) {
+    //         // Clone the board.
+    //         let newBoard = JSON.parse(JSON.stringify(board));
+    //         newBoard[move.to.row][move.to.col] = newBoard[move.from.row][move.from.col];
+    //         newBoard[move.from.row][move.from.col] = null;
+    //         if (move.moveType === "capture") {
+    //             // Remove the jumped piece.
+    //             let midRow = (move.from.row + move.to.row) / 2;
+    //             let midCol = (move.from.col + move.to.col) / 2;
+    //             newBoard[midRow][midCol] = null;
+    //         }
+    //         let newEval = evaluateBoard(newBoard, playerColor);
+    //         let delta = newEval - currentEval;
+    //         if (delta > bestDelta) {
+    //             bestDelta = delta;
+    //             bestMove = move;
+    //         }
+    //     }
+
+    //     // Threshold for significant improvement (this value can be tuned).
+    //     const SIGNIFICANT_DELTA = 50;
+    //     if (bestMove && bestDelta >= SIGNIFICANT_DELTA) {
+    //         return bestMove;
+    //     }
+
+    //     // Otherwise, fall back to the full search.
+    //     const turnOrder = ['red', 'blue', 'black', 'green'];
+    //     const startTime = Date.now();
+    //     const result = search(board, playerColor, depth, timeLimit, startTime, turnOrder);
+    //     return result.move;
+    // }
+
+    // Example usage:
+    // Assuming you have a board state, and it's red's turn.
+    let exampleBoard = createInitialBoard();
+    // Set up a sample board state for testing...
+    // Then, to get the best move for red with a depth of 3 and a search time limit of 2000ms:
+    const bestMove = findBestMove(exampleBoard, 'red', 3, 2000);
+    console.log("Best move for red:", bestMove);
+
+</script>
+
+<script>
+    // Assume gridSize, getAllLegalMoves(board, playerColor), evaluateBoard(board, playerColor)
+// and the helper getMoveOffsets(playerColor) functions are defined as in previous examples.
+
+// Helper to check win conditions for current player.
+function isWinningMove(move, color) {
+  if (color === 'red' && move.to.row === 0 && move.moveType === "capture") return true;
+  if (color === 'blue' && move.to.col === 7 && move.moveType === "capture") return true;
+  if (color === 'black' && move.to.row === 7 && move.moveType === "capture") return true;
+  if (color === 'green' && move.to.col === 0 && move.moveType === "capture") return true;
+  return false;
+}
+
+// Function to calculate a piece's value based solely on its positional contribution.
+function getPieceValue(piece, row, col) {
+  if (piece.color === 'red') return Math.pow(8 - row, 2);
+  if (piece.color === 'black') return Math.pow(row + 1, 2);
+  if (piece.color === 'blue') return Math.pow(8 - col, 2);
+  if (piece.color === 'green') return Math.pow(col + 1, 2);
+  return 0;
+}
+
+/**
+ * Checks for endangered pieces and returns a safe move (if available)
+ * that rescues the piece. The idea is: for each piece of the current player,
+ * if an opponent capture is possible (using current legal moves for all opponents),
+ * then see if there is any legal move that moves the piece so that no immediate capture is possible.
+ */
+function getRescueMove(board, playerColor) {
+  // Opponents: all players except current.
+  const opponentColors = ['red', 'blue', 'black', 'green'].filter(c => c !== playerColor);
+  let bestRescue = null;
+  let bestSavedValue = -Infinity;
+  
+  // For each cell on board.
+  for (let r = 0; r < gridSize; r++) {
+    for (let c = 0; c < gridSize; c++) {
+      const piece = board[r][c];
+      if (piece && piece.color === playerColor) {
+        // Check if this piece is in danger.
+        let inDanger = false;
+        opponentColors.forEach(oppColor => {
+          let oppMoves = getAllLegalMoves(board, oppColor);
+          for (let move of oppMoves) {
+            if (move.moveType === "capture") {
+              // For a capture move, mid square is:
+              let midRow = (move.from.row + move.to.row) / 2;
+              let midCol = (move.from.col + move.to.col) / 2;
+              if (midRow === r && midCol === c) {
+                inDanger = true;
+                break;
+              }
+            }
+          }
+        });
+        if (inDanger) {
+          // Get all legal moves for current player's piece at (r, c).
+          let candidateMoves = getAllLegalMoves(board, playerColor).filter(m => m.from.row === r && m.from.col === c);
+          candidateMoves.forEach(move => {
+            // Simulate the move.
+            let newBoard = JSON.parse(JSON.stringify(board));
+            newBoard[move.to.row][move.to.col] = newBoard[r][c];
+            newBoard[r][c] = null;
+            // If the move is a capture, remove the jumped piece.
+            if (move.moveType === "capture") {
+              let midRow = (move.from.row + move.to.row) / 2;
+              let midCol = (move.from.col + move.to.col) / 2;
+              newBoard[midRow][midCol] = null;
+            }
+            // Now check if the piece is still in danger in newBoard:
+            let stillInDanger = false;
+            opponentColors.forEach(oppColor => {
+              let oppMoves = getAllLegalMoves(newBoard, oppColor);
+              for (let oppMove of oppMoves) {
+                if (oppMove.moveType === "capture") {
+                  let midRow = (oppMove.from.row + oppMove.to.row) / 2;
+                  let midCol = (oppMove.from.col + oppMove.to.col) / 2;
+                  if (midRow === move.to.row && midCol === move.to.col) {
+                    stillInDanger = true;
+                    break;
+                  }
+                }
+              }
+            });
+            if (!stillInDanger) {
+              // Calculate the value saved.
+              let savedValue = getPieceValue(piece, r, c);
+              if (savedValue > bestSavedValue) {
+                bestSavedValue = savedValue;
+                bestRescue = move;
+              }
+            }
+          });
+        }
+      }
+    }
+  }
+  return bestRescue;
+}
+
+// The search function (a simple recursive depth-limited search).
+function search(board, currentPlayer, depth, timeLimit, startTime, turnOrder) {
+  if (depth === 0 || (Date.now() - startTime) >= timeLimit) {
+    return { score: evaluateBoard(board, currentPlayer) };
+  }
+  let legalMoves = getAllLegalMoves(board, currentPlayer);
+  if (legalMoves.length === 0) {
+    return { score: evaluateBoard(board, currentPlayer) };
+  }
+  let best = { score: -Infinity, move: null };
+  for (let move of legalMoves) {
+    let newBoard = JSON.parse(JSON.stringify(board));
+    newBoard[move.to.row][move.to.col] = newBoard[move.from.row][move.from.col];
+    newBoard[move.from.row][move.from.col] = null;
+    if (move.moveType === "capture") {
+      let midRow = (move.from.row + move.to.row) / 2;
+      let midCol = (move.from.col + move.to.col) / 2;
+      newBoard[midRow][midCol] = null;
+    }
+    let currentIndex = turnOrder.indexOf(currentPlayer);
+    let nextIndex = (currentIndex + 1) % turnOrder.length;
+    let nextPlayer = turnOrder[nextIndex];
+    let result = search(newBoard, nextPlayer, depth - 1, timeLimit, startTime, turnOrder);
+    if (result.score > best.score) {
+      best.score = result.score;
+      best.move = move;
+    }
+  }
+  return best;
+}
+
+// Wrapper to find best move for current player.
+function findBestMove(board, playerColor, depth, timeLimit) {
+  let legalMoves = getAllLegalMoves(board, playerColor);
+  
+  // Step 1: Check for an immediate winning capture.
+  for (let move of legalMoves) {
+    if (isWinningMove(move, playerColor)) {
+      return move;
+    }
+  }
+  
+  // Step 2: Evaluate delta improvements.
+  let currentEval = evaluateBoard(board, playerColor);
+  let best = { score: -Infinity, move: null };
+  for (let move of legalMoves) {
+    let newBoard = JSON.parse(JSON.stringify(board));
+    newBoard[move.to.row][move.to.col] = newBoard[move.from.row][move.from.col];
+    newBoard[move.from.row][move.from.col] = null;
+    if (move.moveType === "capture") {
+      let midRow = (move.from.row + move.to.row) / 2;
+      let midCol = (move.from.col + move.to.col) / 2;
+      newBoard[midRow][midCol] = null;
+    }
+    let newEval = evaluateBoard(newBoard, playerColor);
+    let delta = newEval - currentEval;
+    if (delta > best.score) {
+      best.score = delta;
+      best.move = move;
+    }
+  }
+  const SIGNIFICANT_DELTA = 50;
+  if (best.move && best.score >= SIGNIFICANT_DELTA) {
+    return best.move;
+  }
+  
+  // Step 3: Check for endangered pieces and rescue.
+  let rescueMove = getRescueMove(board, playerColor);
+  if (rescueMove) {
+    return rescueMove;
+  }
+  
+  // Step 4: Fallback to full search.
+  const turnOrder = ['red', 'blue', 'black', 'green'];
+  const start = Date.now();
+  let result = search(board, playerColor, depth, timeLimit, start, turnOrder);
+  return result.move;
+}
+
+</script>
+
+<script>
+    // const canvas = document.getElementById('gameCanvas');
+    const coordsDisplay = document.getElementById('coordsDisplay');
+    // const gridSize = 8;
+    const cellSize = canvas.width / gridSize;
+
+    canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const col = Math.floor(x / cellSize);
+        const row = Math.floor(y / cellSize);
+        coordsDisplay.textContent = `Coordinates: (${row}, ${col})`;
+    });
 </script>
 
 </html>

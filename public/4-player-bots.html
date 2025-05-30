@@ -842,110 +842,7 @@
         return score;
     }
 
-    // Depth-limited search with time limit using a simple max-n approach.
-    // turnOrder is an array containing the colors in order: ['red','blue','yellow','green'].
-    // Returns an object: { move: bestMove, score: bestScore } for the current player.
-    // function search(board, currentPlayer, depth, timeLimit, startTime, turnOrder) {
-    //     // If depth is 0 or time limit exceeded, return evaluation for current player.
-    //     if (depth === 0 || (Date.now() - startTime) >= timeLimit) {
-    //         return { score: evaluateBoard(board, currentPlayer) };
-    //     }
-    //     let legalMoves = getAllLegalMoves(board, currentPlayer);
-    //     if (legalMoves.length === 0) {
-    //         // No moves available: return evaluation.
-    //         return { score: evaluateBoard(board, currentPlayer) };
-    //     }
-    //     let best = { score: -Infinity, move: null };
-    //     for (let move of legalMoves) {
-    //         // Clone board and apply move.
-    //         let newBoard = JSON.parse(JSON.stringify(board));
-    //         newBoard[move.to.row][move.to.col] = newBoard[move.from.row][move.from.col];
-    //         newBoard[move.from.row][move.from.col] = null;
-    //         // If it's a capture, remove the opponent piece located in the middle.
-    //         if (move.moveType === "capture") {
-    //             const diagRow = (move.from.row + move.to.row) / 2;
-    //             const diagCol = (move.from.col + move.to.col) / 2;
-    //             newBoard[diagRow][diagCol] = null;
-    //         }
-    //         // Determine next player in turn order.
-    //         let currentIndex = turnOrder.indexOf(currentPlayer);
-    //         let nextIndex = (currentIndex + 1) % turnOrder.length;
-    //         let nextPlayer = turnOrder[nextIndex];
-    //         let result = search(newBoard, nextPlayer, depth - 1, timeLimit, startTime, turnOrder);
-    //         // For a rough estimate, we focus on maximizing current player's score.
-    //         if (result.score > best.score) {
-    //             best.score = result.score;
-    //             best.move = move;
-    //         }
-    //     }
-    //     return best;
-    // }
 
-    // Wrapper function to find the best move for current player given the board, player color,
-    // depth, and time limit. It checks first for winning moves and "high-delta" capturing moves.
-    // function findBestMove(board, playerColor, depth, timeLimit) {
-    //     let legalMoves = getAllLegalMoves(board, playerColor);
-
-    //     // Define winning zones for each player:
-    //     // red: win if move.to.row === 0,
-    //     // blue: win if move.to.col === 7,
-    //     // yellow: win if move.to.row === 7,
-    //     // green: win if move.to.col === 0.
-    //     function isWinningMove(move, color) {
-    //         if (color === 'red' && move.to.row === 0 && move.moveType === "capture") return true;
-    //         if (color === 'blue' && move.to.col === 7 && move.moveType === "capture") return true;
-    //         if (color === 'yellow' && move.to.row === 7 && move.moveType === "capture") return true;
-    //         if (color === 'green' && move.to.col === 0 && move.moveType === "capture") return true;
-    //         return false;
-    //     }
-
-    //     // First, update each move's moveType (if not already updated) by generating the moves.
-    //     // (Assume getAllLegalMoves already returns moves with moveType = "move" or "capture".)
-
-    //     // Check for an immediate winning capture.
-    //     for (let move of legalMoves) {
-    //         if (isWinningMove(move, playerColor)) {
-    //             return move;
-    //         }
-    //     }
-
-    //     // Calculate current evaluation using your evaluation function.
-    //     let currentEval = evaluateBoard(board, playerColor);
-    //     let bestMove = null;
-    //     let bestDelta = -Infinity;
-
-    //     // For each legal move, simulate the move and compute the evaluation delta.
-    //     for (let move of legalMoves) {
-    //         // Clone the board.
-    //         let newBoard = JSON.parse(JSON.stringify(board));
-    //         newBoard[move.to.row][move.to.col] = newBoard[move.from.row][move.from.col];
-    //         newBoard[move.from.row][move.from.col] = null;
-    //         if (move.moveType === "capture") {
-    //             // Remove the jumped piece.
-    //             let midRow = (move.from.row + move.to.row) / 2;
-    //             let midCol = (move.from.col + move.to.col) / 2;
-    //             newBoard[midRow][midCol] = null;
-    //         }
-    //         let newEval = evaluateBoard(newBoard, playerColor);
-    //         let delta = newEval - currentEval;
-    //         if (delta > bestDelta) {
-    //             bestDelta = delta;
-    //             bestMove = move;
-    //         }
-    //     }
-
-    //     // Threshold for significant improvement (this value can be tuned).
-    //     const SIGNIFICANT_DELTA = 50;
-    //     if (bestMove && bestDelta >= SIGNIFICANT_DELTA) {
-    //         return bestMove;
-    //     }
-
-    //     // Otherwise, fall back to the full search.
-    //     const turnOrder = ['red', 'blue', 'yellow', 'green'];
-    //     const startTime = Date.now();
-    //     const result = search(board, playerColor, depth, timeLimit, startTime, turnOrder);
-    //     return result.move;
-    // }
 
     // Example usage:
     // Assuming you have a board state, and it's red's turn.
@@ -956,6 +853,7 @@
     console.log("Best move for red:", bestMove);
 
 </script>
+
 
 
 <script>
@@ -972,6 +870,34 @@
         const row = Math.floor(y / cellSize);
         coordsDisplay.textContent = `Coordinates: (${row}, ${col})`;
     });
+
+    let turns = ["red", "yellow", "green", "blue"]
+    let currentTurn = "red"
+
+    function handleTurns() {
+        switch (currentTurn) {
+            case "red":
+                currentTurn = "yellow";
+                break;
+            case "yellow":
+                currentTurn = "green";
+                break;
+            case "green":
+                currentTurn = "blue";
+                break;
+            case "blue":
+                currentTurn = "red";
+                break;
+            default:
+                break;
+        }
+    }
+
+    function handleAiMove(){
+        
+    }
+
+
 </script>
 
 </html>
